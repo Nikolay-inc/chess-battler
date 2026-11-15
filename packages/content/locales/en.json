@@ -1,0 +1,98 @@
+{
+  "family": {
+    "legion": "Legion",
+    "riders": "Riders",
+    "mystics": "Mystics",
+    "guards": "Guards"
+  },
+  "unit": {
+    "legionnaire": { "name": "Legionnaire", "desc": "" },
+    "shieldbearer": {
+      "name": "Shieldbearer",
+      "desc": "Cover: adjacent allies get +{amount} armor."
+    },
+    "standard_bearer": {
+      "name": "Standard-Bearer",
+      "desc": "Banner: Legion allies in the same row get +{amount} ATK."
+    },
+    "veteran": {
+      "name": "Veteran",
+      "desc": "Hardened: +{atkPerHit} ATK each time it takes damage, up to +{max}."
+    },
+    "rider": { "name": "Rider", "desc": "" },
+    "skirmisher": {
+      "name": "Skirmisher",
+      "desc": "Spotter: attacks the target with the highest ATK."
+    },
+    "lancer": {
+      "name": "Lancer",
+      "desc": "Lance: if its push causes a collision, collision damage +{amount}."
+    },
+    "commander": {
+      "name": "Commander",
+      "desc": "Rally: at battle start all allied Riders get +{initiative} initiative and +{atk} ATK."
+    },
+    "adept": { "name": "Adept", "desc": "Marksman: hits along the whole diagonal." },
+    "novice": {
+      "name": "Novice",
+      "desc": "Heal: after attacking (or instead of moving if no enemy is in range) heals the most wounded diagonal ally for {amount}."
+    },
+    "stormcaller": {
+      "name": "Stormcaller",
+      "desc": "Squall: the piece the target crashes into is pushed too (chain of up to {maxLinks} links)."
+    },
+    "oracle": {
+      "name": "Oracle",
+      "desc": "Foresight: at battle start the ally with the most HP gets a {amount} shield."
+    },
+    "warden": { "name": "Warden", "desc": "Steady: pushes against it are {pushResist} weaker." },
+    "sentry": {
+      "name": "Sentry",
+      "desc": "Retaliation: an attacker in an adjacent square takes {amount} damage."
+    },
+    "ram": { "name": "Ram", "desc": "Heavy: takes no collision damage." },
+    "bastion": {
+      "name": "Bastion",
+      "desc": "Taunt: enemies with the Bastion in their attack zone must attack it."
+    }
+  },
+  "synergy": {
+    "legion": {
+      "2": {
+        "name": "Formation",
+        "desc": "+{armorPerNeighbor} armor for each adjacent Legion ally, up to +{max}."
+      },
+      "4": {
+        "name": "Promotion",
+        "desc": "A Legion piece that reaches the enemy's back row gets +{hp} HP, +{atk} ATK and attacks all 8 adjacent squares (once per battle)."
+      }
+    },
+    "riders": {
+      "2": {
+        "name": "Charge",
+        "desc": "Each Rider's first attack in a battle deals ×{multiplier} damage."
+      },
+      "4": {
+        "name": "Breakthrough",
+        "desc": "After a jump, a Rider pushes every adjacent enemy by {power}."
+      }
+    },
+    "mystics": {
+      "2": {
+        "name": "Blessing",
+        "desc": "Every {every} ticks, each Mystic heals its diagonal allies (1 square) for {amount}."
+      },
+      "4": {
+        "name": "Curse",
+        "desc": "Each Mystic attack lowers the target's armor by {armor} for the rest of the battle."
+      }
+    },
+    "guards": {
+      "2": { "name": "Crush", "desc": "Guards get +{amount} push strength." },
+      "4": {
+        "name": "Wall",
+        "desc": "A piece pushed by a Guard into another piece or the edge is stunned for 1 tick and takes +{collisionBonus} collision damage."
+      }
+    }
+  }
+}

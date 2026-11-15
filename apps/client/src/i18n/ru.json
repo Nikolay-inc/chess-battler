@@ -1,0 +1,213 @@
+{
+  "app": {
+    "title": "Chess Battler",
+    "tagline": "Шахматный автобатлер: собери армию — она сражается сама"
+  },
+  "languages": {
+    "auto": "Авто (язык устройства)",
+    "ru": "Русский",
+    "uk": "Українська",
+    "bg": "Български",
+    "en": "English"
+  },
+  "nav": {
+    "sections": "Разделы",
+    "home": "Главная",
+    "collection": "Коллекция",
+    "shop": "Магазин",
+    "profile": "Профиль",
+    "settings": "Настройки"
+  },
+  "home": {
+    "play": "Играть",
+    "continue": "Продолжить",
+    "newRun": "Новый забег",
+    "currentRun": "Текущий забег",
+    "lastRun": "Последний забег",
+    "runSummary": "Раунд {round} · {hearts} · 🏆 {wins}/{target}",
+    "runWon": "Пройден! 🏆 {wins}",
+    "runWins": "Побед: {wins}",
+    "confirmNewRun": "Начать новый забег? Текущий будет потерян."
+  },
+  "play": {
+    "screen": "Забег",
+    "back": "На главную",
+    "lives": "Жизни",
+    "gold": "Золото",
+    "round": "Раунд {round}",
+    "newRun": "Новый забег",
+    "unitShop": "Магазин фигур",
+    "reroll": "Переброс · {cost}",
+    "freeze": "Заморозить магазин",
+    "fight": "В бой · раунд {round}",
+    "speed": "Скорость",
+    "skip": "Пропустить",
+    "battleStart": "Начало боя",
+    "tick": "Такт {tick} / {max}",
+    "bench": "Скамейка",
+    "enemyHidden": "Соперник появится в бою",
+    "needUnit": "Поставьте хотя бы одну фигуру на поле",
+    "sell": "Продать +{gold}",
+    "result": "Итог"
+  },
+  "errors": {
+    "not_enough_gold": "Не хватает золота",
+    "bench_full": "Скамейка заполнена",
+    "board_full": "Поле заполнено — лимит раунда",
+    "invalid_location": "Сюда нельзя",
+    "empty_slot": "Слот пуст",
+    "nothing_there": "Здесь пусто",
+    "run_over": "Забег окончен"
+  },
+  "synergies": {
+    "empty": "Синергии семей: 2 и 4 фигуры одной семьи на поле",
+    "onBoard": "{family}: {n} на поле"
+  },
+  "pattern": {
+    "legion": "ходит вперёд и вбок на 1, бьёт вперёд по диагонали",
+    "riders": "ходит и бьёт буквой «Г», перепрыгивает фигуры",
+    "mystics": "ходит и бьёт по диагоналям",
+    "guards": "ходит и бьёт по прямым"
+  },
+  "card": {
+    "close": "Закрыть",
+    "level": "{family} · уровень {cost}",
+    "stars": "Уровень звёзд",
+    "hp": "HP",
+    "atk": "ATK",
+    "armor": "броня",
+    "initiative": "иниц.",
+    "push": "толчок",
+    "self": "фигура",
+    "move": "ход",
+    "attack": "удар",
+    "moveAndAttack": "ход и удар",
+    "schema": "Схема хода и атаки: {text}",
+    "buy": "Купить · {cost}",
+    "noGold": "Не хватает золота · {cost}",
+    "sellHint": "Перетащите на магазин, чтобы продать: +{gold}",
+    "priceAria": "{name}, цена {cost}",
+    "levelAria": "{name}, уровень {cost}"
+  },
+  "battle": {
+    "stunned": "Оглушён",
+    "skipTurn": "Пропуск хода",
+    "curse": "Проклятие: броня {armor}",
+    "chain": "Цепочка ×{n}",
+    "storm": "Буря: +{atk} ATK",
+    "promote": "Повышение!",
+    "buffAtk": "+{n} ATK",
+    "buffArmor": "+{n} броня",
+    "buffInitiative": "+{n} иниц."
+  },
+  "result": {
+    "win": "Победа",
+    "loss": "Поражение",
+    "draw": "Ничья",
+    "timeout": "Время вышло ({ticks}) — решила сумма HP",
+    "enemyBroken": "Армия соперника разбита",
+    "yourBroken": "Ваша армия разбита",
+    "bothBroken": "Обе армии разбиты",
+    "yourAlive": "ваших выжило",
+    "enemyAlive": "у соперника",
+    "bestMoment": "★ Лучший момент · такт {tick}",
+    "bestMomentEnemy": "★ Лучший момент соперника · такт {tick}",
+    "moment": "{attacker} → {target}: {parts}",
+    "momentChain": "цепочка ×{n}",
+    "momentKills": "разбито фигур: {n}",
+    "toBoard": "К доске",
+    "nextRound": "Раунд {round}",
+    "runSummary": "Итоги забега",
+    "footer": "{hearts}  ·  Победы {wins}/{target}"
+  },
+  "count": {
+    "ticks": { "one": "{n} такт", "few": "{n} такта", "many": "{n} тактов", "other": "{n} такта" },
+    "damage": { "one": "{n} урон", "few": "{n} урона", "many": "{n} урона", "other": "{n} урона" },
+    "ticksWord": { "one": "такт", "few": "такта", "many": "тактов", "other": "такта" },
+    "winsWord": { "one": "победа", "few": "победы", "many": "побед", "other": "победы" },
+    "lossesWord": {
+      "one": "поражение",
+      "few": "поражения",
+      "many": "поражений",
+      "other": "поражения"
+    },
+    "roundsWord": { "one": "раунд", "few": "раунда", "many": "раундов", "other": "раунда" },
+    "tier": {
+      "one": "{n} фигура · {name}",
+      "few": "{n} фигуры · {name}",
+      "many": "{n} фигур · {name}",
+      "other": "{n} фигуры · {name}"
+    }
+  },
+  "runEnd": {
+    "won": "Забег пройден!",
+    "lost": "Забег окончен",
+    "wonReason": "Десять побед — армия непобедима",
+    "lostReason": "Жизни закончились",
+    "newRun": "Новый забег"
+  },
+  "feedback": {
+    "title": "Как вам забег?",
+    "rating": "Оценка от 1 до 5",
+    "star": "{n} из 5",
+    "placeholder": "Что раздражало? (необязательно)",
+    "annoyed": "Что раздражало?",
+    "send": "Отправить отзыв",
+    "thanks": "Спасибо за отзыв!"
+  },
+  "tutorial": {
+    "step": "{n}/3 · {text}",
+    "buy": "Нажмите на фигуру в магазине и купите её",
+    "place": "Перетащите фигуру со скамейки на поле — в нижние 3 ряда",
+    "fight": "Нажмите «В бой» — армии сразятся сами",
+    "skip": "Пропустить"
+  },
+  "collection": {
+    "title": "Коллекция",
+    "section": "Раздел коллекции",
+    "units": "Фигуры",
+    "synergies": "Синергии"
+  },
+  "store": {
+    "title": "Магазин",
+    "cosmeticOnly": "Только косметика: скины не влияют на бой",
+    "soon": "Скоро",
+    "restore": "Восстановить покупки",
+    "kindBoard": "Тема доски",
+    "kindFrame": "Рамка фигур",
+    "kindPushFx": "Эффект толчка",
+    "skinMarble": "Мрамор",
+    "skinEmerald": "Изумруд",
+    "skinGoldFrame": "Золотая рамка",
+    "skinLilacSmoke": "Лиловый дым"
+  },
+  "profile": {
+    "title": "Профиль",
+    "guest": "Гость",
+    "notLinked": "Аккаунт не привязан",
+    "link": "Привязать аккаунт",
+    "linkHint": "Скоро: вход по email и через Google — прогресс сохранится",
+    "runs": "Забеги",
+    "wins": "Победы",
+    "best": "Лучший результат",
+    "favorite": "Любимая семья",
+    "history": "Последние забеги",
+    "historyEmpty": "Здесь появится история ваших забегов"
+  },
+  "settings": {
+    "title": "Настройки",
+    "game": "Игра",
+    "language": "Язык",
+    "speed": "Скорость боя",
+    "speedHint": "С какой скоростью начинается каждый бой",
+    "speedAria": "Скорость боя по умолчанию",
+    "sound": "Звук",
+    "music": "Музыка",
+    "vibration": "Вибрация",
+    "account": "Аккаунт",
+    "guest": "Гость",
+    "link": "Привязать",
+    "linkHint": "Вход по email и Google — скоро",
+    "version": "Версия {version}"
+  }
+}

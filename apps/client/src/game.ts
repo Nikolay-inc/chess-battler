@@ -22,6 +22,7 @@ import type {
 } from '@chess-battler/sim';
 import type { BenchView, BoardView } from './board-view';
 import type { BattlePlayer } from './player';
+import { t } from './i18n';
 import { PrepController } from './prep';
 import { Tutorial } from './tutorial';
 import {
@@ -43,16 +44,6 @@ import {
   toast,
 } from './ui';
 import type { Application } from 'pixi.js';
-
-const ERROR_TEXT: Record<string, string> = {
-  not_enough_gold: 'Не хватает золота',
-  bench_full: 'Скамейка заполнена',
-  board_full: 'Поле заполнено — лимит раунда',
-  invalid_location: 'Сюда нельзя',
-  empty_slot: 'Слот пуст',
-  nothing_there: 'Здесь пусто',
-  run_over: 'Забег окончен',
-};
 
 /** Сложность соперника растёт по раундам. */
 export const ghostDifficulty = (round: number): number => Math.min(1, 0.35 + 0.065 * (round - 1));
@@ -93,7 +84,7 @@ export class Game {
       onDragState: (sell, over) => {
         shopEl.classList.toggle('sell-target', sell !== null);
         shopEl.classList.toggle('sell-hover', over);
-        shopEl.dataset.sell = sell === null ? '' : `Продать +${sell}`;
+        shopEl.dataset.sell = sell === null ? '' : t('play.sell', { gold: sell });
       },
     });
     board.onFocusChange = (v) => {
@@ -121,7 +112,7 @@ export class Game {
     $('new-run').addEventListener('click', () => {
       if (this.inBattle) return;
       if (this.state.status === 'shop' && this.state.round > 1) {
-        if (!confirm('Начать новый забег? Текущий будет потерян.')) return;
+        if (!confirm(t('home.confirmNewRun'))) return;
       }
       this.newRun();
     });
@@ -129,6 +120,13 @@ export class Game {
 
   get current(): RunState {
     return this.state;
+  }
+
+  /** Смена языка: перерисовать то, что видно (во время боя — ничего, бой доиграет). */
+  relocalize(): void {
+    if (this.inBattle) return;
+    if (this.state.status !== 'shop') this.showRunEnd();
+    else this.renderPrep();
   }
 
   /** Вход на экран забега: перерисовать, если не идёт бой (бой продолжает играть сам). */
@@ -157,7 +155,7 @@ export class Game {
       this.state = applyAction(this.state, action, RUN_CONFIG, DEFAULT_RULES);
     } catch (e) {
       if (e instanceof RunError) {
-        toast(ERROR_TEXT[e.code] ?? e.message);
+        toast(t(`errors.${e.code}`));
         return false;
       }
       throw e;
@@ -214,7 +212,8 @@ export class Game {
     $<HTMLButtonElement>('reroll').disabled = s.gold < RUN_CONFIG.rerollCost;
     $('freeze').classList.toggle('on', s.frozen);
     $('freeze').setAttribute('aria-pressed', String(s.frozen));
-    $('fight').textContent = `В бой · раунд ${s.round}`;
+    $('fight').textContent = t('play.fight', { round: s.round });
+    $('reroll').textContent = t('play.reroll', { cost: RUN_CONFIG.rerollCost });
     this.prep.render(s);
     this.tutorial.update(s);
   }
@@ -223,7 +222,7 @@ export class Game {
     if (this.inBattle) return;
     const before = this.state;
     if (before.board.length === 0) {
-      toast('Поставьте хотя бы одну фигуру на поле');
+      toast(t('play.needUnit'));
       return;
     }
     this.inBattle = true;
@@ -259,11 +258,14 @@ export class Game {
 
     const hearts = '♥'.repeat(after.lives) + '♡'.repeat(RUN_CONFIG.lives - after.lives);
     renderResult($('result'), result, {
-      footer: `${hearts}  ·  Победы ${after.wins}/${RUN_CONFIG.winsToFinish}`,
+      footer: t('result.footer', { hearts, wins: after.wins, target: RUN_CONFIG.winsToFinish }),
       buttons: [
-        { label: 'К доске', onClick: () => ($('result').hidden = true) },
+        { label: t('result.toBoard'), onClick: () => ($('result').hidden = true) },
         {
-          label: after.status === 'shop' ? `Раунд ${after.round}` : 'Итоги забега',
+          label:
+            after.status === 'shop'
+              ? t('result.nextRound', { round: after.round })
+              : t('result.runSummary'),
           primary: true,
           onClick: () => this.afterBattle(),
         },

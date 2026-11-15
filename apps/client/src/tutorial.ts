@@ -1,4 +1,5 @@
 import type { RunState } from '@chess-battler/sim';
+import { t } from './i18n';
 
 export type TutorialStep = 'buy' | 'place' | 'fight';
 const ORDER: readonly TutorialStep[] = ['buy', 'place', 'fight'];
@@ -12,7 +13,7 @@ export function tutorialStep(s: RunState): TutorialStep {
 }
 
 interface StepView {
-  readonly text: string;
+  readonly text: () => string;
   /** Прямоугольник, на который указывает подсказка. */
   anchor(): DOMRect | null;
 }
@@ -33,12 +34,9 @@ export class Tutorial {
   ) {
     this.step = Tutorial.done() ? null : 'buy';
     this.steps = {
-      buy: { text: 'Нажмите на фигуру в магазине и купите её', anchor: anchors.shop },
-      place: {
-        text: 'Перетащите фигуру со скамейки на поле — в нижние 3 ряда',
-        anchor: anchors.board,
-      },
-      fight: { text: 'Нажмите «В бой» — армии сразятся сами', anchor: anchors.fight },
+      buy: { text: () => t('tutorial.buy'), anchor: anchors.shop },
+      place: { text: () => t('tutorial.place'), anchor: anchors.board },
+      fight: { text: () => t('tutorial.fight'), anchor: anchors.fight },
     };
     this.text = bubble.querySelector('.coach-text')!;
     bubble.querySelector('.coach-skip')!.addEventListener('click', () => this.finish());
@@ -64,7 +62,7 @@ export class Tutorial {
     const derived = tutorialStep(s);
     if (ORDER.indexOf(derived) > ORDER.indexOf(this.step)) this.step = derived;
     const n = ORDER.indexOf(this.step) + 1;
-    this.text.textContent = `${n}/3 · ${this.steps[this.step].text}`;
+    this.text.textContent = t('tutorial.step', { n, text: this.steps[this.step].text() });
     this.bubble.hidden = false;
     this.position();
   }

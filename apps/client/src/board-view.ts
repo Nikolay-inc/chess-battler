@@ -2,6 +2,7 @@ import { Circle, Container, Graphics, Rectangle, Text } from 'pixi.js';
 import { attackZone, moveTargets } from '@chess-battler/sim';
 import type { Family, Rules, Side, Stars, Vec } from '@chess-battler/sim';
 import { getUnit } from '@chess-battler/content';
+import { t, unitName } from './i18n';
 import { px, tokens } from './theme/tokens';
 
 export const CELL = 76;
@@ -61,7 +62,7 @@ export class UnitView extends Container {
     });
     glyph.anchor.set(0.5, 0.6);
     const label = new Text({
-      text: def.name,
+      text: unitName(def.id),
       style: { fontFamily: tokens.font.family, fontSize: 9, fill: px('unitLabel') },
     });
     label.anchor.set(0.5, 0);
@@ -152,6 +153,7 @@ export class BoardView extends Container {
   readonly unitLayer = new Container();
   readonly fxLayer = new Container();
   private readonly enemyVeil = new Container();
+  private readonly veilText: Text;
   /** Фигура, для которой показаны клетки хода и атаки. */
   private focused: number | null = null;
   /** true — выбрана тапом (не сбрасывается при уходе курсора). */
@@ -190,10 +192,10 @@ export class BoardView extends Container {
     const veil = new Graphics()
       .rect(PAD, PAD, this.cols * CELL, (this.rows / 2) * CELL)
       .fill({ color: px('bg'), alpha: 0.55 });
-    const veilText = new Text({
-      text: 'Соперник появится в бою',
+    const veilText = (this.veilText = new Text({
+      text: t('play.enemyHidden'),
       style: { fontFamily: tokens.font.family, fontSize: 15, fill: px('textMuted') },
-    });
+    }));
     veilText.anchor.set(0.5);
     veilText.position.set(this.pixelWidth / 2, PAD + (this.rows / 4) * CELL);
     // В Pixi v8 детей могут иметь только Container, не Graphics.
@@ -217,6 +219,11 @@ export class BoardView extends Container {
 
   get pixelHeight(): number {
     return this.rows * CELL + PAD * 2;
+  }
+
+  /** Обновить надписи после смены языка. */
+  relabel(): void {
+    this.veilText.text = t('play.enemyHidden');
   }
 
   set veiled(v: boolean) {
@@ -349,7 +356,7 @@ export class BenchView extends Container {
   ) {
     super();
     this.title = new Text({
-      text: 'Скамейка',
+      text: t('play.bench'),
       style: { fontFamily: tokens.font.family, fontSize: 11, fill: px('textMuted') },
     });
     this.title.position.set(PAD, 0);
@@ -359,6 +366,11 @@ export class BenchView extends Container {
 
   get pixelHeight(): number {
     return CELL + 18;
+  }
+
+  /** Обновить надписи после смены языка. */
+  relabel(): void {
+    this.title.text = t('play.bench');
   }
 
   slotCenter(i: number): { x: number; y: number } {

@@ -2,6 +2,7 @@ import { Graphics, Text } from 'pixi.js';
 import type { BattleEvent, BattleResult, BuffStat, Vec } from '@chess-battler/sim';
 import type { BoardView, UnitView } from './board-view';
 import { CELL } from './board-view';
+import { t } from './i18n';
 import { PACING, groupByTick, involvedUnits, staggerMs } from './timeline';
 import type { ActionGroup } from './timeline';
 import type { Tweener } from './tween';
@@ -29,11 +30,15 @@ const COLOR = {
   storm: px('fxStorm'),
 } as const;
 
-const BUFF_LABEL: Record<BuffStat, string> = {
-  atk: 'ATK',
-  armor: 'броня',
-  initiative: 'иниц.',
-};
+const buffText = (stat: BuffStat, n: number): string =>
+  t(
+    stat === 'atk'
+      ? 'battle.buffAtk'
+      : stat === 'armor'
+        ? 'battle.buffArmor'
+        : 'battle.buffInitiative',
+    { n },
+  );
 
 /** Длительности анимаций на ×1, мс. */
 const MS = {
@@ -124,19 +129,19 @@ export class BattlePlayer {
       case 'shield':
         return this.shieldUp(e.unit, e.amount);
       case 'buff':
-        return this.status(e.unit, `+${e.amount} ${BUFF_LABEL[e.stat]}`, COLOR.buff, 40);
+        return this.status(e.unit, buffText(e.stat, e.amount), COLOR.buff, 40);
       case 'support':
         return this.pulse(e.unit, COLOR.heal);
       case 'stun': {
         this.unit(e.unit)?.setBadge('💫');
-        return this.status(e.unit, 'Оглушён', COLOR.stun, 80);
+        return this.status(e.unit, t('battle.stunned'), COLOR.stun, 80);
       }
       case 'stunned': {
         this.unit(e.unit)?.setBadge('');
-        return this.status(e.unit, 'Пропуск хода', COLOR.stun, 220);
+        return this.status(e.unit, t('battle.skipTurn'), COLOR.stun, 220);
       }
       case 'curse':
-        return this.status(e.unit, `Проклятие: броня ${e.armor}`, COLOR.curse, 60);
+        return this.status(e.unit, t('battle.curse', { armor: e.armor }), COLOR.curse, 60);
       case 'promote':
         return this.promote(e.unit, e.hp);
       case 'storm':
@@ -245,7 +250,13 @@ export class BattlePlayer {
     const links = depth + 1;
     if (links > ctx.chainShown) {
       ctx.chainShown = links;
-      this.floatText(`Цепочка ×${links}`, v.base.x, v.base.y - CELL * 0.55, COLOR.chain, 18);
+      this.floatText(
+        t('battle.chain', { n: links }),
+        v.base.x,
+        v.base.y - CELL * 0.55,
+        COLOR.chain,
+        18,
+      );
     }
   }
 
@@ -365,7 +376,13 @@ export class BattlePlayer {
       .rect(0, 0, b.pixelWidth, b.pixelHeight)
       .fill({ color: COLOR.storm, alpha: 0.28 });
     b.fxLayer.addChild(flash);
-    this.floatText(`Буря: +${atk} ATK`, b.pixelWidth / 2, b.pixelHeight / 2, COLOR.storm, 26);
+    this.floatText(
+      t('battle.storm', { atk }),
+      b.pixelWidth / 2,
+      b.pixelHeight / 2,
+      COLOR.storm,
+      26,
+    );
     await this.tw.run(MS.storm, (t) => {
       if (!flash.destroyed) flash.alpha = 1 - t;
     });
@@ -376,7 +393,7 @@ export class BattlePlayer {
     const v = this.unit(id);
     if (!v) return;
     v.setHp(hp, v.maxHp + (hp - v.hp));
-    this.floatText('Повышение!', v.base.x, v.base.y - CELL * 0.55, COLOR.promote, 18);
+    this.floatText(t('battle.promote'), v.base.x, v.base.y - CELL * 0.55, COLOR.promote, 18);
     await this.pulse(id, COLOR.promote);
   }
 

@@ -21,7 +21,7 @@ export function snapshotRow(before: RunState, outcome: RoundOutcome): Row {
 /** Ответ на опрос в конце забега. */
 export function feedbackRow(s: RunState, rating: number, annoyed: string): Row {
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
-    throw new RangeError('Оценка должна быть от 1 до 5');
+    throw new RangeError('rating must be an integer 1..5');
   }
   const text = annoyed.trim().slice(0, FEEDBACK_MAX);
   return {

@@ -3,7 +3,7 @@ import { getUnit } from './units';
 
 /** Армия в сериализуемом виде (id фигур + локальные координаты) — так её хранит сервер. */
 export interface ArmyData {
-  readonly name: string;
+  readonly id: string;
   readonly slots: readonly { readonly unit: string; readonly x: number; readonly y: number }[];
 }
 
@@ -12,7 +12,7 @@ export const resolveArmy = (army: ArmyData): ArmySlot[] =>
 
 /** Локальные координаты: y=0 — задний ряд, y=2 — передний. */
 export const DEMO_ARMY_A: ArmyData = {
-  name: 'Железный строй',
+  id: 'iron_line',
   slots: [
     { unit: 'warden', x: 0, y: 0 },
     { unit: 'adept', x: 2, y: 0 },
@@ -26,7 +26,7 @@ export const DEMO_ARMY_A: ArmyData = {
 };
 
 export const DEMO_ARMY_B: ArmyData = {
-  name: 'Буря с востока',
+  id: 'eastern_storm',
   slots: [
     { unit: 'stormcaller', x: 1, y: 0 },
     { unit: 'adept', x: 3, y: 0 },

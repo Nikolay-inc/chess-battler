@@ -1,0 +1,203 @@
+{
+  "app": {
+    "title": "Chess Battler",
+    "tagline": "A chess auto-battler: build an army — it fights on its own"
+  },
+  "languages": {
+    "auto": "Auto (device language)",
+    "ru": "Русский",
+    "uk": "Українська",
+    "bg": "Български",
+    "en": "English"
+  },
+  "nav": {
+    "sections": "Sections",
+    "home": "Home",
+    "collection": "Collection",
+    "shop": "Shop",
+    "profile": "Profile",
+    "settings": "Settings"
+  },
+  "home": {
+    "play": "Play",
+    "continue": "Continue",
+    "newRun": "New run",
+    "currentRun": "Current run",
+    "lastRun": "Last run",
+    "runSummary": "Round {round} · {hearts} · 🏆 {wins}/{target}",
+    "runWon": "Cleared! 🏆 {wins}",
+    "runWins": "Wins: {wins}",
+    "confirmNewRun": "Start a new run? Your current run will be lost."
+  },
+  "play": {
+    "screen": "Run",
+    "back": "Back to home",
+    "lives": "Lives",
+    "gold": "Gold",
+    "round": "Round {round}",
+    "newRun": "New run",
+    "unitShop": "Unit shop",
+    "reroll": "Reroll · {cost}",
+    "freeze": "Freeze shop",
+    "fight": "Fight · round {round}",
+    "speed": "Speed",
+    "skip": "Skip",
+    "battleStart": "Battle start",
+    "tick": "Tick {tick} / {max}",
+    "bench": "Bench",
+    "enemyHidden": "The opponent appears in battle",
+    "needUnit": "Place at least one unit on the board",
+    "sell": "Sell +{gold}",
+    "result": "Result"
+  },
+  "errors": {
+    "not_enough_gold": "Not enough gold",
+    "bench_full": "Bench is full",
+    "board_full": "Board is full — round limit",
+    "invalid_location": "Can't place it here",
+    "empty_slot": "Slot is empty",
+    "nothing_there": "Nothing here",
+    "run_over": "Run is over"
+  },
+  "synergies": {
+    "empty": "Family synergies: 2 and 4 units of one family on the board",
+    "onBoard": "{family}: {n} on board"
+  },
+  "pattern": {
+    "legion": "moves 1 forward or sideways, attacks diagonally forward",
+    "riders": "moves and attacks in an L shape, jumps over pieces",
+    "mystics": "moves and attacks along diagonals",
+    "guards": "moves and attacks along straight lines"
+  },
+  "card": {
+    "close": "Close",
+    "level": "{family} · tier {cost}",
+    "stars": "Star level",
+    "hp": "HP",
+    "atk": "ATK",
+    "armor": "armor",
+    "initiative": "init.",
+    "push": "push",
+    "self": "unit",
+    "move": "move",
+    "attack": "attack",
+    "moveAndAttack": "move and attack",
+    "schema": "Move and attack pattern: {text}",
+    "buy": "Buy · {cost}",
+    "noGold": "Not enough gold · {cost}",
+    "sellHint": "Drag onto the shop to sell: +{gold}",
+    "priceAria": "{name}, costs {cost}",
+    "levelAria": "{name}, tier {cost}"
+  },
+  "battle": {
+    "stunned": "Stunned",
+    "skipTurn": "Turn skipped",
+    "curse": "Curse: armor {armor}",
+    "chain": "Chain ×{n}",
+    "storm": "Storm: +{atk} ATK",
+    "promote": "Promoted!",
+    "buffAtk": "+{n} ATK",
+    "buffArmor": "+{n} armor",
+    "buffInitiative": "+{n} init."
+  },
+  "result": {
+    "win": "Victory",
+    "loss": "Defeat",
+    "draw": "Draw",
+    "timeout": "Time's up ({ticks}) — total HP decided",
+    "enemyBroken": "The enemy army is broken",
+    "yourBroken": "Your army is broken",
+    "bothBroken": "Both armies are broken",
+    "yourAlive": "of yours survived",
+    "enemyAlive": "enemy's left",
+    "bestMoment": "★ Best moment · tick {tick}",
+    "bestMomentEnemy": "★ Enemy's best moment · tick {tick}",
+    "moment": "{attacker} → {target}: {parts}",
+    "momentChain": "chain ×{n}",
+    "momentKills": "units broken: {n}",
+    "toBoard": "To the board",
+    "nextRound": "Round {round}",
+    "runSummary": "Run summary",
+    "footer": "{hearts}  ·  Wins {wins}/{target}"
+  },
+  "count": {
+    "ticks": { "one": "{n} tick", "other": "{n} ticks" },
+    "damage": { "one": "{n} damage", "other": "{n} damage" },
+    "ticksWord": { "one": "tick", "other": "ticks" },
+    "winsWord": { "one": "win", "other": "wins" },
+    "lossesWord": { "one": "loss", "other": "losses" },
+    "roundsWord": { "one": "round", "other": "rounds" },
+    "tier": { "one": "{n} unit · {name}", "other": "{n} units · {name}" }
+  },
+  "runEnd": {
+    "won": "Run cleared!",
+    "lost": "Run over",
+    "wonReason": "Ten wins — your army is unbeatable",
+    "lostReason": "Out of lives",
+    "newRun": "New run"
+  },
+  "feedback": {
+    "title": "How was the run?",
+    "rating": "Rating from 1 to 5",
+    "star": "{n} of 5",
+    "placeholder": "What annoyed you? (optional)",
+    "annoyed": "What annoyed you?",
+    "send": "Send feedback",
+    "thanks": "Thanks for the feedback!"
+  },
+  "tutorial": {
+    "step": "{n}/3 · {text}",
+    "buy": "Tap a unit in the shop and buy it",
+    "place": "Drag the unit from the bench onto the board — the bottom 3 rows",
+    "fight": "Tap “Fight” — the armies battle on their own",
+    "skip": "Skip"
+  },
+  "collection": {
+    "title": "Collection",
+    "section": "Collection section",
+    "units": "Units",
+    "synergies": "Synergies"
+  },
+  "store": {
+    "title": "Shop",
+    "cosmeticOnly": "Cosmetics only: skins don't affect battles",
+    "soon": "Soon",
+    "restore": "Restore purchases",
+    "kindBoard": "Board theme",
+    "kindFrame": "Unit frame",
+    "kindPushFx": "Push effect",
+    "skinMarble": "Marble",
+    "skinEmerald": "Emerald",
+    "skinGoldFrame": "Golden frame",
+    "skinLilacSmoke": "Lilac smoke"
+  },
+  "profile": {
+    "title": "Profile",
+    "guest": "Guest",
+    "notLinked": "Account not linked",
+    "link": "Link account",
+    "linkHint": "Coming soon: sign in with email or Google — your progress stays",
+    "runs": "Runs",
+    "wins": "Wins",
+    "best": "Best result",
+    "favorite": "Favorite family",
+    "history": "Recent runs",
+    "historyEmpty": "Your run history will appear here"
+  },
+  "settings": {
+    "title": "Settings",
+    "game": "Game",
+    "language": "Language",
+    "speed": "Battle speed",
+    "speedHint": "The speed every battle starts at",
+    "speedAria": "Default battle speed",
+    "sound": "Sound",
+    "music": "Music",
+    "vibration": "Vibration",
+    "account": "Account",
+    "guest": "Guest",
+    "link": "Link",
+    "linkHint": "Email and Google sign-in — coming soon",
+    "version": "Version {version}"
+  }
+}

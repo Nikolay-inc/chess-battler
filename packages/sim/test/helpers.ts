@@ -16,7 +16,6 @@ import type { BattleEvent, BattleResult, Side, UnitDef, UnitPlacement } from '..
 /** Тестовая фигура: по умолчанию неподвижная мишень без атаки. */
 export const def = (over: Partial<UnitDef> = {}): UnitDef => ({
   id: 'test',
-  name: 'Тест',
   family: 'legion',
   hp: 10,
   atk: 0,

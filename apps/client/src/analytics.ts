@@ -110,7 +110,7 @@ export class Analytics {
         body: JSON.stringify(rows),
       });
       if (res.ok) return true;
-      console.warn(`[analytics] ${table}: отправка не удалась, HTTP ${res.status}`);
+      console.warn(`[analytics] ${table}: send failed, HTTP ${res.status}`);
       // 4xx (кроме 408/429) не примут и при повторе — выбрасываем, чтобы не копить.
       return !(res.status >= 500 || res.status === 408 || res.status === 429);
     } catch {

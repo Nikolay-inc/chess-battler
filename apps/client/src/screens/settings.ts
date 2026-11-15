@@ -1,13 +1,7 @@
+import { LOCALES, t } from '../i18n';
+import type { Locale } from '../i18n';
 import type { Settings, SettingsStore, Speed } from '../settings';
 import { $, el } from '../ui';
-
-const LANGS: readonly { value: string; label: string }[] = [
-  { value: '', label: 'Авто (язык устройства)' },
-  { value: 'ru', label: 'Русский' },
-  { value: 'uk', label: 'Українська' },
-  { value: 'bg', label: 'Български' },
-  { value: 'en', label: 'English' },
-];
 
 function row(label: string, control: HTMLElement, hint?: string): HTMLElement {
   const r = el('div', 'setting-row');
@@ -38,19 +32,27 @@ export function renderSettings(store: SettingsStore, version: string): void {
     renderSettings(store, version);
   };
 
+  // Язык: «Авто» + названия языков на них самих (их не переводим).
   const lang = el('select', 'select') as HTMLSelectElement;
-  lang.setAttribute('aria-label', 'Язык');
-  for (const l of LANGS) {
-    const o = el('option', '', l.label) as HTMLOptionElement;
-    o.value = l.value;
-    o.selected = (s.locale ?? '') === l.value;
-    lang.append(o);
+  lang.setAttribute('aria-label', t('settings.language'));
+  const options: { value: Locale | ''; label: string }[] = [
+    { value: '', label: t('languages.auto') },
+    ...LOCALES.map((l) => ({ value: l, label: t(`languages.${l}`) })),
+  ];
+  for (const o of options) {
+    const opt = el('option', '', o.label) as HTMLOptionElement;
+    opt.value = o.value;
+    opt.selected = (s.locale ?? '') === o.value;
+    lang.append(opt);
   }
-  lang.disabled = true; // переводы — подэтап B
+  // Смена языка перерисовывает всё через onLocaleChange (в т.ч. этот экран).
+  lang.addEventListener('change', () =>
+    store.update({ locale: (lang.value || null) as Locale | null }),
+  );
 
   const speed = el('div', 'segmented');
   speed.setAttribute('role', 'radiogroup');
-  speed.setAttribute('aria-label', 'Скорость боя по умолчанию');
+  speed.setAttribute('aria-label', t('settings.speedAria'));
   for (const v of [1, 2, 4] as const satisfies readonly Speed[]) {
     const b = el('button', '', `×${v}`);
     b.type = 'button';
@@ -62,31 +64,31 @@ export function renderSettings(store: SettingsStore, version: string): void {
 
   const game = el('section', 'page-section');
   game.append(
-    el('h2', 'section-title', 'Игра'),
-    row('Язык', lang, 'Переводы появятся в следующем обновлении'),
-    row('Скорость боя', speed, 'С какой скоростью начинается каждый бой'),
+    el('h2', 'section-title', t('settings.game')),
+    row(t('settings.language'), lang),
+    row(t('settings.speed'), speed, t('settings.speedHint')),
     row(
-      'Звук',
-      toggle('Звук', s.sound, (v) => redraw({ sound: v })),
+      t('settings.sound'),
+      toggle(t('settings.sound'), s.sound, (v) => redraw({ sound: v })),
     ),
     row(
-      'Музыка',
-      toggle('Музыка', s.music, (v) => redraw({ music: v })),
+      t('settings.music'),
+      toggle(t('settings.music'), s.music, (v) => redraw({ music: v })),
     ),
     row(
-      'Вибрация',
-      toggle('Вибрация', s.vibration, (v) => redraw({ vibration: v })),
+      t('settings.vibration'),
+      toggle(t('settings.vibration'), s.vibration, (v) => redraw({ vibration: v })),
     ),
   );
 
   const account = el('section', 'page-section');
-  const link = el('button', 'secondary', 'Привязать');
+  const link = el('button', 'secondary', t('settings.link'));
   link.type = 'button';
   link.disabled = true;
   account.append(
-    el('h2', 'section-title', 'Аккаунт'),
-    row('Гость', link, 'Вход по email и Google — скоро'),
+    el('h2', 'section-title', t('settings.account')),
+    row(t('settings.guest'), link, t('settings.linkHint')),
   );
 
-  root.append(game, account, el('p', 'hint center', `Версия ${version}`));
+  root.append(game, account, el('p', 'hint center', t('settings.version', { version })));
 }

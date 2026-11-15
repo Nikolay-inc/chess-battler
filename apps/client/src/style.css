@@ -74,7 +74,7 @@ body[data-route='play'] .tabbar {
   font-size: var(--font-size-xxs);
   text-decoration: none;
 }
-.tab span {
+.tab span:not(.tab-label) {
   font-family: var(--font-glyph);
   font-size: var(--font-size-xxl);
   line-height: 1;

@@ -8,6 +8,8 @@ import { BENCH_GAP, BenchView, BoardView } from './board-view';
 import { Game } from './game';
 import { BattlePlayer } from './player';
 import { Tweener } from './tween';
+import { applyStatic, detectLocale, onLocaleChange, setLocale, t } from './i18n';
+import type { Locale } from './i18n';
 import { Router } from './router';
 import type { Route } from './router';
 import { CollectionScreen } from './screens/collection';
@@ -24,8 +26,24 @@ import './style.css';
 
 const SPEEDS = [1, 2, 4];
 
+/** language_code из Telegram Mini App, если игра открыта в Telegram (SDK — подэтап E). */
+function telegramLanguage(): string | undefined {
+  const tg = (
+    globalThis as {
+      Telegram?: { WebApp?: { initDataUnsafe?: { user?: { language_code?: string } } } };
+    }
+  ).Telegram;
+  return tg?.WebApp?.initDataUnsafe?.user?.language_code;
+}
+
 async function main(): Promise<void> {
   applyTokens();
+  // Язык: выбранный в настройках, иначе Telegram → браузер → английский.
+  const settings = new SettingsStore();
+  const resolveLocale = (chosen: Locale | null): Locale =>
+    chosen ?? detectLocale(navigator.languages ?? [navigator.language], telegramLanguage());
+  setLocale(resolveLocale(settings.current.locale));
+  applyStatic();
   const rules = DEFAULT_RULES;
   const board = new BoardView(rules);
   const bench = new BenchView(RUN_CONFIG.benchSlots, board.pixelWidth);
@@ -60,12 +78,12 @@ async function main(): Promise<void> {
   fitCanvas();
   app.stage.addChild(board, bench);
 
-  const settings = new SettingsStore();
   let speedIdx = SPEEDS.indexOf(settings.current.speed);
   const tweener = new Tweener(app.ticker, () => SPEEDS[speedIdx]!);
   const tickEl = $('tick');
   const player = new BattlePlayer(board, tweener, (tick) => {
-    tickEl.textContent = tick > 0 ? `Такт ${tick} / ${rules.maxTicks}` : 'Начало боя';
+    tickEl.textContent =
+      tick > 0 ? t('play.tick', { tick, max: rules.maxTicks }) : t('play.battleStart');
   });
 
   const speedBtn = $<HTMLButtonElement>('speed');
@@ -178,6 +196,22 @@ async function main(): Promise<void> {
     show[route]();
   });
   $('play-back').addEventListener('click', () => router.go('home'));
+
+  // Смена языка: перерисовать текущий экран, забег и надписи на доске.
+  let shownLocale = settings.current.locale;
+  settings.onChange((s) => {
+    if (s.locale !== shownLocale) {
+      shownLocale = s.locale;
+      setLocale(resolveLocale(s.locale));
+    }
+  });
+  onLocaleChange(() => {
+    board.relabel();
+    bench.relabel();
+    game.relocalize();
+    hideInfo($('info'));
+    show[router.route]();
+  });
   router.sync();
 
   // Отладочный доступ в dev-сборке: ручная прокрутка тикера, замеры темпа.

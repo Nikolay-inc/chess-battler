@@ -1,0 +1,208 @@
+{
+  "app": {
+    "title": "Chess Battler",
+    "tagline": "Шаховий автобатлер: збери армію — вона б'ється сама"
+  },
+  "languages": {
+    "auto": "Авто (мова пристрою)",
+    "ru": "Русский",
+    "uk": "Українська",
+    "bg": "Български",
+    "en": "English"
+  },
+  "nav": {
+    "sections": "Розділи",
+    "home": "Головна",
+    "collection": "Колекція",
+    "shop": "Крамниця",
+    "profile": "Профіль",
+    "settings": "Налаштування"
+  },
+  "home": {
+    "play": "Грати",
+    "continue": "Продовжити",
+    "newRun": "Новий забіг",
+    "currentRun": "Поточний забіг",
+    "lastRun": "Останній забіг",
+    "runSummary": "Раунд {round} · {hearts} · 🏆 {wins}/{target}",
+    "runWon": "Пройдено! 🏆 {wins}",
+    "runWins": "Перемог: {wins}",
+    "confirmNewRun": "Почати новий забіг? Поточний буде втрачено."
+  },
+  "play": {
+    "screen": "Забіг",
+    "back": "На головну",
+    "lives": "Життя",
+    "gold": "Золото",
+    "round": "Раунд {round}",
+    "newRun": "Новий забіг",
+    "unitShop": "Крамниця фігур",
+    "reroll": "Оновити · {cost}",
+    "freeze": "Заморозити крамницю",
+    "fight": "У бій · раунд {round}",
+    "speed": "Швидкість",
+    "skip": "Пропустити",
+    "battleStart": "Початок бою",
+    "tick": "Такт {tick} / {max}",
+    "bench": "Лава",
+    "enemyHidden": "Суперник з'явиться в бою",
+    "needUnit": "Поставте хоча б одну фігуру на поле",
+    "sell": "Продати +{gold}",
+    "result": "Підсумок"
+  },
+  "errors": {
+    "not_enough_gold": "Не вистачає золота",
+    "bench_full": "Лава заповнена",
+    "board_full": "Поле заповнене — ліміт раунду",
+    "invalid_location": "Сюди не можна",
+    "empty_slot": "Слот порожній",
+    "nothing_there": "Тут порожньо",
+    "run_over": "Забіг завершено"
+  },
+  "synergies": {
+    "empty": "Синергії родин: 2 і 4 фігури однієї родини на полі",
+    "onBoard": "{family}: {n} на полі"
+  },
+  "pattern": {
+    "legion": "ходить уперед і вбік на 1, б'є вперед по діагоналі",
+    "riders": "ходить і б'є літерою «Г», перестрибує фігури",
+    "mystics": "ходить і б'є по діагоналях",
+    "guards": "ходить і б'є по прямих"
+  },
+  "card": {
+    "close": "Закрити",
+    "level": "{family} · рівень {cost}",
+    "stars": "Рівень зірок",
+    "hp": "HP",
+    "atk": "ATK",
+    "armor": "броня",
+    "initiative": "ініц.",
+    "push": "поштовх",
+    "self": "фігура",
+    "move": "хід",
+    "attack": "удар",
+    "moveAndAttack": "хід і удар",
+    "schema": "Схема ходу та атаки: {text}",
+    "buy": "Купити · {cost}",
+    "noGold": "Не вистачає золота · {cost}",
+    "sellHint": "Перетягніть на крамницю, щоб продати: +{gold}",
+    "priceAria": "{name}, ціна {cost}",
+    "levelAria": "{name}, рівень {cost}"
+  },
+  "battle": {
+    "stunned": "Оглушено",
+    "skipTurn": "Пропуск ходу",
+    "curse": "Прокляття: броня {armor}",
+    "chain": "Ланцюг ×{n}",
+    "storm": "Буря: +{atk} ATK",
+    "promote": "Підвищення!",
+    "buffAtk": "+{n} ATK",
+    "buffArmor": "+{n} броня",
+    "buffInitiative": "+{n} ініц."
+  },
+  "result": {
+    "win": "Перемога",
+    "loss": "Поразка",
+    "draw": "Нічия",
+    "timeout": "Час вийшов ({ticks}) — вирішила сума HP",
+    "enemyBroken": "Армію суперника розбито",
+    "yourBroken": "Вашу армію розбито",
+    "bothBroken": "Обидві армії розбито",
+    "yourAlive": "ваших вижило",
+    "enemyAlive": "у суперника",
+    "bestMoment": "★ Найкращий момент · такт {tick}",
+    "bestMomentEnemy": "★ Найкращий момент суперника · такт {tick}",
+    "moment": "{attacker} → {target}: {parts}",
+    "momentChain": "ланцюг ×{n}",
+    "momentKills": "розбито фігур: {n}",
+    "toBoard": "До дошки",
+    "nextRound": "Раунд {round}",
+    "runSummary": "Підсумки забігу",
+    "footer": "{hearts}  ·  Перемоги {wins}/{target}"
+  },
+  "count": {
+    "ticks": { "one": "{n} такт", "few": "{n} такти", "many": "{n} тактів", "other": "{n} такту" },
+    "damage": { "one": "{n} шкоди", "few": "{n} шкоди", "many": "{n} шкоди", "other": "{n} шкоди" },
+    "ticksWord": { "one": "такт", "few": "такти", "many": "тактів", "other": "такту" },
+    "winsWord": { "one": "перемога", "few": "перемоги", "many": "перемог", "other": "перемоги" },
+    "lossesWord": { "one": "поразка", "few": "поразки", "many": "поразок", "other": "поразки" },
+    "roundsWord": { "one": "раунд", "few": "раунди", "many": "раундів", "other": "раунду" },
+    "tier": {
+      "one": "{n} фігура · {name}",
+      "few": "{n} фігури · {name}",
+      "many": "{n} фігур · {name}",
+      "other": "{n} фігури · {name}"
+    }
+  },
+  "runEnd": {
+    "won": "Забіг пройдено!",
+    "lost": "Забіг завершено",
+    "wonReason": "Десять перемог — армія непереможна",
+    "lostReason": "Життя скінчилися",
+    "newRun": "Новий забіг"
+  },
+  "feedback": {
+    "title": "Як вам забіг?",
+    "rating": "Оцінка від 1 до 5",
+    "star": "{n} з 5",
+    "placeholder": "Що дратувало? (необов'язково)",
+    "annoyed": "Що дратувало?",
+    "send": "Надіслати відгук",
+    "thanks": "Дякуємо за відгук!"
+  },
+  "tutorial": {
+    "step": "{n}/3 · {text}",
+    "buy": "Торкніться фігури в крамниці та купіть її",
+    "place": "Перетягніть фігуру з лави на поле — у нижні 3 ряди",
+    "fight": "Натисніть «У бій» — армії битимуться самі",
+    "skip": "Пропустити"
+  },
+  "collection": {
+    "title": "Колекція",
+    "section": "Розділ колекції",
+    "units": "Фігури",
+    "synergies": "Синергії"
+  },
+  "store": {
+    "title": "Крамниця",
+    "cosmeticOnly": "Лише косметика: скіни не впливають на бій",
+    "soon": "Незабаром",
+    "restore": "Відновити покупки",
+    "kindBoard": "Тема дошки",
+    "kindFrame": "Рамка фігур",
+    "kindPushFx": "Ефект поштовху",
+    "skinMarble": "Мармур",
+    "skinEmerald": "Смарагд",
+    "skinGoldFrame": "Золота рамка",
+    "skinLilacSmoke": "Бузковий дим"
+  },
+  "profile": {
+    "title": "Профіль",
+    "guest": "Гість",
+    "notLinked": "Акаунт не прив'язано",
+    "link": "Прив'язати акаунт",
+    "linkHint": "Незабаром: вхід через email і Google — прогрес збережеться",
+    "runs": "Забіги",
+    "wins": "Перемоги",
+    "best": "Найкращий результат",
+    "favorite": "Улюблена родина",
+    "history": "Останні забіги",
+    "historyEmpty": "Тут з'явиться історія ваших забігів"
+  },
+  "settings": {
+    "title": "Налаштування",
+    "game": "Гра",
+    "language": "Мова",
+    "speed": "Швидкість бою",
+    "speedHint": "З якою швидкістю починається кожен бій",
+    "speedAria": "Швидкість бою за замовчуванням",
+    "sound": "Звук",
+    "music": "Музика",
+    "vibration": "Вібрація",
+    "account": "Акаунт",
+    "guest": "Гість",
+    "link": "Прив'язати",
+    "linkHint": "Вхід через email і Google — незабаром",
+    "version": "Версія {version}"
+  }
+}

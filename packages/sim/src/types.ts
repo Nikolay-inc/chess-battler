@@ -89,8 +89,6 @@ export type SynergyEffect =
 export interface SynergyTier {
   /** Сколько фигур семьи на поле нужно (каждая копия считается). */
   readonly count: number;
-  readonly name: string;
-  readonly description: string;
   readonly effect: SynergyEffect;
 }
 
@@ -101,8 +99,8 @@ export interface SynergyDef {
 
 /** Статичное описание фигуры (данные из packages/content). */
 export interface UnitDef {
+  /** Латинский id; названия и описания — в packages/content/locales. */
   readonly id: string;
-  readonly name: string;
   readonly family: Family;
   readonly hp: number;
   readonly atk: number;
@@ -119,8 +117,6 @@ export interface UnitDef {
   readonly abilities?: readonly Ability[];
   /** Цена в золоте (= уровень). Нужна забегу, бою — нет. */
   readonly cost?: number;
-  /** Текст способности для интерфейса. sim его не читает. */
-  readonly description?: string;
 }
 
 export interface UnitPlacement {

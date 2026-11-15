@@ -1,25 +1,21 @@
 import { analyzeBattle } from '@chess-battler/sim';
+import { t, unitName } from './i18n';
 import type { BattleMoment, BattleResult, Side } from '@chess-battler/sim';
-import { getUnit } from '@chess-battler/content';
 
 /** Сторона игрока: пока игрок всегда снизу. */
 export const PLAYER_SIDE: Side = 'A';
 
-export const plural = (n: number, one: string, few: string, many: string): string => {
-  const m10 = n % 10;
-  const m100 = n % 100;
-  if (m10 === 1 && m100 !== 11) return one;
-  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
-  return many;
-};
-
 /** «Таран: цепочка ×3, 9 урона, убил 1» — описание момента для экрана итога. */
 export function describeMoment(m: BattleMoment, unitName: (id: number) => string): string {
   const parts: string[] = [];
-  if (m.chain >= 2) parts.push(`цепочка ×${m.chain}`);
-  parts.push(`${m.damage} ${plural(m.damage, 'урон', 'урона', 'урона')}`);
-  if (m.kills > 0) parts.push(`разбито фигур: ${m.kills}`);
-  return `${unitName(m.unit)} → ${unitName(m.target)}: ${parts.join(', ')}`;
+  if (m.chain >= 2) parts.push(t('result.momentChain', { n: m.chain }));
+  parts.push(t('count.damage', { n: m.damage }));
+  if (m.kills > 0) parts.push(t('result.momentKills', { n: m.kills }));
+  return t('result.moment', {
+    attacker: unitName(m.unit),
+    target: unitName(m.target),
+    parts: parts.join(', '),
+  });
 }
 
 export interface ResultButton {
@@ -58,16 +54,16 @@ export function renderResult(root: HTMLElement, r: BattleResult, opts: ResultOpt
   const best = summary.best ?? analyzeBattle(r).best;
   const enemy: Side = PLAYER_SIDE === 'A' ? 'B' : 'A';
   const outcome = r.winner === null ? 'draw' : r.winner === PLAYER_SIDE ? 'win' : 'loss';
-  const title = { win: 'Победа', loss: 'Поражение', draw: 'Ничья' }[outcome];
+  const title = t(`result.${outcome}`);
   const reason =
     r.reason === 'timeout'
-      ? `Время вышло (${r.rules.maxTicks} тактов) — решила сумма HP`
+      ? t('result.timeout', { ticks: t('count.ticks', { n: r.rules.maxTicks }) })
       : outcome === 'win'
-        ? 'Армия соперника разбита'
+        ? t('result.enemyBroken')
         : outcome === 'loss'
-          ? 'Ваша армия разбита'
-          : 'Обе армии разбиты';
-  const unitName = (id: number) => getUnit(r.initial[id]!.defId).name;
+          ? t('result.yourBroken')
+          : t('result.bothBroken');
+  const nameOf = (id: number) => unitName(r.initial[id]!.defId);
   const mine = summary.survivors[PLAYER_SIDE];
   const theirs = summary.survivors[enemy];
 
@@ -82,9 +78,9 @@ export function renderResult(root: HTMLElement, r: BattleResult, opts: ResultOpt
     return s;
   };
   stats.append(
-    stat(`${mine.alive}/${mine.total}`, 'ваших выжило'),
-    stat(`${theirs.alive}/${theirs.total}`, 'у соперника'),
-    stat(String(r.ticks), plural(r.ticks, 'такт', 'такта', 'тактов')),
+    stat(`${mine.alive}/${mine.total}`, t('result.yourAlive')),
+    stat(`${theirs.alive}/${theirs.total}`, t('result.enemyAlive')),
+    stat(String(r.ticks), t('count.ticksWord', { n: r.ticks })),
   );
   root.append(stats);
 
@@ -92,8 +88,12 @@ export function renderResult(root: HTMLElement, r: BattleResult, opts: ResultOpt
     const moment = el('div', 'result-moment');
     const own = best.side === PLAYER_SIDE;
     moment.append(
-      el('span', 'moment-label', `★ Лучший момент${own ? '' : ' соперника'} · такт ${best.tick}`),
-      el('p', 'moment-text', describeMoment(best, unitName)),
+      el(
+        'span',
+        'moment-label',
+        t(own ? 'result.bestMoment' : 'result.bestMomentEnemy', { tick: best.tick }),
+      ),
+      el('p', 'moment-text', describeMoment(best, nameOf)),
     );
     root.append(moment);
   }
@@ -139,20 +139,20 @@ export interface FeedbackOptions {
 function feedbackForm(fb: FeedbackOptions): HTMLElement {
   const box = el('form', 'feedback') as HTMLFormElement;
   if (fb.answered) {
-    box.append(el('p', 'feedback-thanks', 'Спасибо за отзыв!'));
+    box.append(el('p', 'feedback-thanks', t('feedback.thanks')));
     return box;
   }
-  box.append(el('p', 'feedback-title', 'Как вам забег?'));
+  box.append(el('p', 'feedback-title', t('feedback.title')));
   let rating = 0;
   const stars = el('div', 'feedback-stars');
   stars.setAttribute('role', 'radiogroup');
-  stars.setAttribute('aria-label', 'Оценка от 1 до 5');
+  stars.setAttribute('aria-label', t('feedback.rating'));
   const buttons: HTMLButtonElement[] = [];
   for (let i = 1; i <= 5; i++) {
     const b = el('button', 'star', '★') as HTMLButtonElement;
     b.type = 'button';
     b.setAttribute('role', 'radio');
-    b.setAttribute('aria-label', `${i} из 5`);
+    b.setAttribute('aria-label', t('feedback.star', { n: i }));
     b.setAttribute('aria-checked', 'false');
     b.addEventListener('click', () => {
       rating = i;
@@ -166,18 +166,18 @@ function feedbackForm(fb: FeedbackOptions): HTMLElement {
     stars.append(b);
   }
   const text = el('textarea', 'feedback-text') as HTMLTextAreaElement;
-  text.placeholder = 'Что раздражало? (необязательно)';
+  text.placeholder = t('feedback.placeholder');
   text.maxLength = 1000;
   text.rows = 2;
-  text.setAttribute('aria-label', 'Что раздражало?');
-  const send = el('button', 'secondary feedback-send', 'Отправить отзыв') as HTMLButtonElement;
+  text.setAttribute('aria-label', t('feedback.annoyed'));
+  const send = el('button', 'secondary feedback-send', t('feedback.send')) as HTMLButtonElement;
   send.type = 'submit';
   send.disabled = true;
   box.addEventListener('submit', (e) => {
     e.preventDefault();
     if (rating < 1) return;
     fb.onSubmit(rating, text.value);
-    box.replaceChildren(el('p', 'feedback-thanks', 'Спасибо за отзыв!'));
+    box.replaceChildren(el('p', 'feedback-thanks', t('feedback.thanks')));
   });
   box.append(stars, text, send);
   return box;
@@ -193,8 +193,8 @@ export function renderRunEnd(
   root.replaceChildren();
   root.dataset.outcome = info.won ? 'win' : 'loss';
   root.append(
-    el('h2', 'result-title', info.won ? 'Забег пройден!' : 'Забег окончен'),
-    el('p', 'result-reason', info.won ? 'Десять побед — армия непобедима' : 'Жизни закончились'),
+    el('h2', 'result-title', t(info.won ? 'runEnd.won' : 'runEnd.lost')),
+    el('p', 'result-reason', t(info.won ? 'runEnd.wonReason' : 'runEnd.lostReason')),
   );
   const stats = el('div', 'result-stats');
   const stat = (value: string, label: string) => {
@@ -203,12 +203,12 @@ export function renderRunEnd(
     return s;
   };
   stats.append(
-    stat(String(info.wins), plural(info.wins, 'победа', 'победы', 'побед')),
-    stat(String(info.losses), plural(info.losses, 'поражение', 'поражения', 'поражений')),
-    stat(String(info.rounds), plural(info.rounds, 'раунд', 'раунда', 'раундов')),
+    stat(String(info.wins), t('count.winsWord', { n: info.wins })),
+    stat(String(info.losses), t('count.lossesWord', { n: info.losses })),
+    stat(String(info.rounds), t('count.roundsWord', { n: info.rounds })),
   );
   root.append(stats);
   if (feedback) root.append(feedbackForm(feedback));
-  appendButtons(root, [{ label: 'Новый забег', primary: true, onClick: onNewRun }]);
+  appendButtons(root, [{ label: t('runEnd.newRun'), primary: true, onClick: onNewRun }]);
   root.hidden = false;
 }

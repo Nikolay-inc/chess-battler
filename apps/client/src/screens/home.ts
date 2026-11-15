@@ -1,4 +1,5 @@
 import type { RunConfig, RunState } from '@chess-battler/sim';
+import { t } from '../i18n';
 import { $, el } from '../ui';
 
 /** Есть ли у забега прогресс, который стоит продолжить. */
@@ -23,25 +24,30 @@ export function renderHome(s: RunState, cfg: RunConfig, actions: HomeActions): v
 
   if (runInProgress(s)) {
     info.append(
-      el('span', 'home-run-label', 'Текущий забег'),
-      el('strong', '', `Раунд ${s.round} · ${hearts} · 🏆 ${s.wins}/${cfg.winsToFinish}`),
+      el('span', 'home-run-label', t('home.currentRun')),
+      el(
+        'strong',
+        '',
+        t('home.runSummary', { round: s.round, hearts, wins: s.wins, target: cfg.winsToFinish }),
+      ),
     );
-    play.textContent = 'Продолжить';
+    play.textContent = t('home.continue');
     fresh.hidden = false;
   } else if (s.status !== 'shop') {
     info.append(
-      el('span', 'home-run-label', 'Последний забег'),
-      el('strong', '', s.status === 'won' ? `Пройден! 🏆 ${s.wins}` : `Побед: ${s.wins}`),
+      el('span', 'home-run-label', t('home.lastRun')),
+      el('strong', '', t(s.status === 'won' ? 'home.runWon' : 'home.runWins', { wins: s.wins })),
     );
-    play.textContent = 'Новый забег';
+    play.textContent = t('home.newRun');
     fresh.hidden = true;
   } else {
-    play.textContent = 'Играть';
+    play.textContent = t('home.play');
     fresh.hidden = true;
   }
+  fresh.textContent = t('home.newRun');
   info.hidden = info.childElementCount === 0;
   play.onclick = () => (s.status === 'shop' ? actions.onPlay() : actions.onNewRun());
   fresh.onclick = () => {
-    if (confirm('Начать новый забег? Текущий будет потерян.')) actions.onNewRun();
+    if (confirm(t('home.confirmNewRun'))) actions.onNewRun();
   };
 }

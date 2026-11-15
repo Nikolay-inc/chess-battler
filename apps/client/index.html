@@ -15,51 +15,67 @@
       <section class="screen screen-home" data-screen="home" aria-labelledby="home-title">
         <div class="home-hero">
           <div class="home-glyphs" aria-hidden="true">♟ ♞ ♝ ♜</div>
-          <h1 class="home-title" id="home-title">Chess Battler</h1>
-          <p class="home-sub">Шахматный автобатлер: собери армию — она сражается сама</p>
+          <h1 class="home-title" id="home-title" data-i18n="app.title">Chess Battler</h1>
+          <p class="home-sub" data-i18n="app.tagline"></p>
         </div>
         <div class="home-run" id="home-run"></div>
-        <button class="fight home-play" id="home-play" type="button">Играть</button>
-        <button class="secondary home-new" id="home-new" type="button" hidden>Новый забег</button>
+        <button class="fight home-play" id="home-play" type="button"></button>
+        <button class="secondary home-new" id="home-new" type="button" hidden></button>
       </section>
 
       <!-- Забег -->
-      <section class="screen screen-play" data-screen="play" aria-label="Забег">
+      <section class="screen screen-play" data-screen="play" data-i18n-aria="play.screen">
         <header class="hud" id="hud">
-          <button class="hud-back" id="play-back" type="button" aria-label="На главную">‹</button>
+          <button class="hud-back" id="play-back" type="button" data-i18n-aria="play.back">
+            ‹
+          </button>
           <span class="hud-round"></span>
-          <span class="hud-lives" aria-label="Жизни"></span>
+          <span class="hud-lives" data-i18n-aria="play.lives"></span>
           <span class="hud-wins"></span>
-          <span class="hud-gold" aria-label="Золото"></span>
+          <span class="hud-gold" data-i18n-aria="play.gold"></span>
           <button
             class="hud-menu"
             id="new-run"
             type="button"
-            aria-label="Новый забег"
-            title="Новый забег"
+            data-i18n-aria="play.newRun"
+            title="↺"
           >
             ↺
           </button>
         </header>
         <div class="synergies" id="synergies"></div>
         <div class="battle-bar">
-          <span class="tick" id="tick">Начало боя</span>
+          <span class="tick" id="tick" data-i18n="play.battleStart"></span>
         </div>
         <div class="stage" id="stage"></div>
-        <section class="shop" id="shop" aria-label="Магазин фигур"></section>
+        <section class="shop" id="shop" data-i18n-aria="play.unitShop"></section>
         <footer class="controls prep-controls">
-          <button class="reroll" id="reroll" type="button">Переброс · 1</button>
-          <button class="freeze" id="freeze" type="button" aria-pressed="false">❄</button>
-          <button class="fight" id="fight" type="button">В бой</button>
+          <button class="reroll" id="reroll" type="button"></button>
+          <button
+            class="freeze"
+            id="freeze"
+            type="button"
+            aria-pressed="false"
+            data-i18n-aria="play.freeze"
+          >
+            ❄
+          </button>
+          <button class="fight" id="fight" type="button"></button>
         </footer>
         <footer class="controls battle-controls">
-          <button class="speed" id="speed" type="button" aria-label="Скорость">×1</button>
-          <button class="skip" id="skip" type="button" disabled>Пропустить</button>
+          <button class="speed" id="speed" type="button" data-i18n-aria="play.speed">×1</button>
+          <button class="skip" id="skip" type="button" disabled data-i18n="play.skip"></button>
         </footer>
-        <section class="result" id="result" role="dialog" aria-label="Итог" hidden></section>
+        <section
+          class="result"
+          id="result"
+          role="dialog"
+          data-i18n-aria="play.result"
+          hidden
+        ></section>
         <div class="coach" id="coach" role="note" hidden>
           <span class="coach-text"></span>
-          <button class="coach-skip" type="button">Пропустить</button>
+          <button class="coach-skip" type="button" data-i18n="tutorial.skip"></button>
         </div>
       </section>
 
@@ -69,46 +85,61 @@
         data-screen="collection"
         aria-labelledby="collection-title"
       >
-        <h1 class="page-title" id="collection-title">Коллекция</h1>
-        <div class="segmented" role="tablist" aria-label="Раздел коллекции">
-          <button type="button" role="tab" id="col-tab-units" aria-selected="true">Фигуры</button>
-          <button type="button" role="tab" id="col-tab-synergies" aria-selected="false">
-            Синергии
-          </button>
+        <h1 class="page-title" id="collection-title" data-i18n="collection.title"></h1>
+        <div class="segmented" role="tablist" data-i18n-aria="collection.section">
+          <button
+            type="button"
+            role="tab"
+            id="col-tab-units"
+            aria-selected="true"
+            data-i18n="collection.units"
+          ></button>
+          <button
+            type="button"
+            role="tab"
+            id="col-tab-synergies"
+            aria-selected="false"
+            data-i18n="collection.synergies"
+          ></button>
         </div>
         <div class="page-scroll" id="collection"></div>
       </section>
 
       <!-- Магазин -->
       <section class="screen screen-page" data-screen="shop" aria-labelledby="store-title">
-        <h1 class="page-title" id="store-title">Магазин</h1>
+        <h1 class="page-title" id="store-title" data-i18n="store.title"></h1>
         <div class="page-scroll" id="store"></div>
       </section>
 
       <!-- Профиль -->
       <section class="screen screen-page" data-screen="profile" aria-labelledby="profile-title">
-        <h1 class="page-title" id="profile-title">Профиль</h1>
+        <h1 class="page-title" id="profile-title" data-i18n="profile.title"></h1>
         <div class="page-scroll" id="profile"></div>
       </section>
 
       <!-- Настройки -->
       <section class="screen screen-page" data-screen="settings" aria-labelledby="settings-title">
-        <h1 class="page-title" id="settings-title">Настройки</h1>
+        <h1 class="page-title" id="settings-title" data-i18n="settings.title"></h1>
         <div class="page-scroll" id="settings"></div>
       </section>
 
-      <nav class="tabbar" aria-label="Разделы">
-        <a class="tab" href="#/home" data-route="home"><span aria-hidden="true">⌂</span>Главная</a>
-        <a class="tab" href="#/collection" data-route="collection">
-          <span aria-hidden="true">♞</span>Коллекция
-        </a>
-        <a class="tab" href="#/shop" data-route="shop"><span aria-hidden="true">◈</span>Магазин</a>
-        <a class="tab" href="#/profile" data-route="profile">
-          <span aria-hidden="true">☺</span>Профиль
-        </a>
-        <a class="tab" href="#/settings" data-route="settings">
-          <span aria-hidden="true">⚙</span>Настройки
-        </a>
+      <nav class="tabbar" data-i18n-aria="nav.sections">
+        <a class="tab" href="#/home" data-route="home"
+          ><span aria-hidden="true">⌂</span><span class="tab-label" data-i18n="nav.home"></span
+        ></a>
+        <a class="tab" href="#/collection" data-route="collection"
+          ><span aria-hidden="true">♞</span
+          ><span class="tab-label" data-i18n="nav.collection"></span
+        ></a>
+        <a class="tab" href="#/shop" data-route="shop"
+          ><span aria-hidden="true">◈</span><span class="tab-label" data-i18n="nav.shop"></span
+        ></a>
+        <a class="tab" href="#/profile" data-route="profile"
+          ><span aria-hidden="true">☺</span><span class="tab-label" data-i18n="nav.profile"></span
+        ></a>
+        <a class="tab" href="#/settings" data-route="settings"
+          ><span aria-hidden="true">⚙</span><span class="tab-label" data-i18n="nav.settings"></span
+        ></a>
       </nav>
 
       <aside class="info" id="info" hidden></aside>

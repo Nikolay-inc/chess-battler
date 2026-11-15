@@ -7,7 +7,7 @@
  */
 import { writeFileSync } from 'node:fs';
 import { performance } from 'node:perf_hooks';
-import { FAMILY_NAMES, RUN_CONFIG, SYNERGIES, UNIT_LIST } from '@chess-battler/content';
+import { CONTENT_TEXTS, RUN_CONFIG, SYNERGIES, UNIT_LIST } from '@chess-battler/content';
 import {
   DEFAULT_RULES,
   activeSynergies,
@@ -110,7 +110,7 @@ const unitRows = UNIT_LIST.map((u) => ({ u, t: byUnit.get(u.id)! })).sort(
 for (const { u, t } of unitRows) {
   const r = rate(t);
   console.log(
-    `  ${ok(r >= 0.45 && r <= 0.55)} ${u.name.padEnd(13)} ${String(u.cost).padStart(2)}  ${String(t.games).padStart(6)}  ${pct(r)}`,
+    `  ${ok(r >= 0.45 && r <= 0.55)} ${CONTENT_TEXTS.ru.unit[u.id as keyof typeof CONTENT_TEXTS.ru.unit].name.padEnd(13)} ${String(u.cost).padStart(2)}  ${String(t.games).padStart(6)}  ${pct(r)}`,
   );
 }
 
@@ -120,7 +120,7 @@ for (const f of families) {
   const t2 = byFamily2.get(f)!;
   const t4 = byFamily4.get(f)!;
   console.log(
-    `  ${ok(!(rate(t4) > 0.55))} ${FAMILY_NAMES[f].padEnd(10)} ${String(t2.games).padStart(10)}  ${pct(rate(t2))}  ${String(t4.games).padStart(10)}  ${pct(rate(t4))}`,
+    `  ${ok(!(rate(t4) > 0.55))} ${CONTENT_TEXTS.ru.family[f].padEnd(10)} ${String(t2.games).padStart(10)}  ${pct(rate(t2))}  ${String(t4.games).padStart(10)}  ${pct(rate(t4))}`,
   );
 }
 

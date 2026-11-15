@@ -1,4 +1,7 @@
-export type Locale = 'ru' | 'uk' | 'bg' | 'en';
+import type { Locale } from './i18n';
+import { LOCALES } from './i18n';
+
+export type { Locale };
 export type Speed = 1 | 2 | 4;
 
 export interface Settings {
@@ -20,7 +23,6 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 export const SETTINGS_KEY = 'chess-battler.settings.v1';
-const LOCALES: readonly Locale[] = ['ru', 'uk', 'bg', 'en'];
 const SPEEDS: readonly Speed[] = [1, 2, 4];
 
 /** Разбор сохранённых настроек: неизвестные и битые поля → значения по умолчанию. */
@@ -33,7 +35,9 @@ export function parseSettings(json: string | null): Settings {
   }
   const bool = (v: unknown, d: boolean) => (typeof v === 'boolean' ? v : d);
   return {
-    locale: LOCALES.includes(raw.locale as Locale) ? (raw.locale as Locale) : null,
+    locale: (LOCALES as readonly string[]).includes(raw.locale as string)
+      ? (raw.locale as Locale)
+      : null,
     sound: bool(raw.sound, DEFAULT_SETTINGS.sound),
     music: bool(raw.music, DEFAULT_SETTINGS.music),
     speed: SPEEDS.includes(raw.speed as Speed) ? (raw.speed as Speed) : DEFAULT_SETTINGS.speed,

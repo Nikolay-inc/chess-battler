@@ -18,7 +18,7 @@ const ofType = <T extends BattleEvent['type']>(events: readonly BattleEvent[], t
 /** Синергия с одной ступенью (порог count). */
 const syn = (family: Family, effect: SynergyEffect, count = 1): SynergyDef => ({
   family,
-  tiers: [{ count, name: effect.kind, description: '', effect }],
+  tiers: [{ count, effect }],
 });
 const run = (units: UnitPlacement[], ...synergies: SynergyDef[]) => simulate({ units, synergies });
 
@@ -30,25 +30,13 @@ describe('подсчёт синергий', () => {
       {
         family: 'legion',
         tiers: [
-          { count: 2, name: 'Строй', description: '', effect: { kind: 'pushBonus', amount: 1 } },
-          {
-            count: 4,
-            name: 'Повышение',
-            description: '',
-            effect: { kind: 'pushBonus', amount: 1 },
-          },
+          { count: 2, effect: { kind: 'pushBonus', amount: 1 } },
+          { count: 4, effect: { kind: 'pushBonus', amount: 1 } },
         ],
       },
       {
         family: 'riders',
-        tiers: [
-          {
-            count: 2,
-            name: 'Натиск',
-            description: '',
-            effect: { kind: 'firstStrike', multiplier: 2 },
-          },
-        ],
+        tiers: [{ count: 2, effect: { kind: 'firstStrike', multiplier: 2 } }],
       },
     ];
     const units = [
@@ -58,8 +46,8 @@ describe('подсчёт синергий', () => {
       { def: rider, side: 'B' as const },
     ];
     const a = activeSynergies(units, 'A', defs);
-    expect(a.map((s) => [s.family, s.count, s.tiers.map((t) => t.name)])).toEqual([
-      ['legion', 4, ['Строй', 'Повышение']],
+    expect(a.map((s) => [s.family, s.count, s.tiers.map((t) => t.count)])).toEqual([
+      ['legion', 4, [2, 4]],
       ['riders', 1, []],
     ]);
     expect(activeSynergies(units, 'B', defs).map((s) => s.tiers.length)).toEqual([1]);

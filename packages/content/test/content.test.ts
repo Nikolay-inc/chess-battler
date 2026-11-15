@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_RULES, createSetup, simulate, validateSetup } from '@chess-battler/sim';
 import type { Family } from '@chess-battler/sim';
 import {
+  CONTENT_TEXTS,
   DEMO_ARMY_A,
   DEMO_ARMY_B,
   RUN_CONFIG,
@@ -9,7 +10,10 @@ import {
   UNIT_LIST,
   getUnit,
   resolveArmy,
+  synergyTextParams,
+  unitTextParams,
 } from '../src';
+import type { ContentTexts } from '../src';
 import { createRun } from '@chess-battler/sim';
 
 describe('стартовые фигуры', () => {
@@ -28,9 +32,33 @@ describe('стартовые фигуры', () => {
     for (const s of SYNERGIES) expect(s.tiers.map((t) => t.count)).toEqual([2, 4]);
   });
 
-  it('у фигур со способностями есть описание для интерфейса', () => {
-    for (const u of UNIT_LIST) {
-      if (u.abilities?.length) expect(u.description, u.id).toBeTruthy();
+  it('тексты на всех языках: названия есть, плейсхолдеры совпадают с числами способностей', () => {
+    const placeholders = (s: string) => [...s.matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort();
+    for (const [locale, texts] of Object.entries(CONTENT_TEXTS) as [string, ContentTexts][]) {
+      for (const u of UNIT_LIST) {
+        const t = texts.unit[u.id as keyof typeof texts.unit];
+        expect(t?.name, `${locale}.${u.id}`).toBeTruthy();
+        const params = Object.keys(unitTextParams(u));
+        for (const p of placeholders(t.desc))
+          expect(params, `${locale}.${u.id}: {${p}}`).toContain(p);
+        // У фигур со способностью или устойчивостью описание обязательно.
+        if (u.abilities?.length || u.pushResist) expect(t.desc, `${locale}.${u.id}`).toBeTruthy();
+        // Плейсхолдеры одинаковы во всех языках.
+        expect(placeholders(t.desc)).toEqual(
+          placeholders(CONTENT_TEXTS.ru.unit[u.id as keyof typeof texts.unit].desc),
+        );
+      }
+      for (const syn of SYNERGIES) {
+        expect(texts.family[syn.family], `${locale}.family.${syn.family}`).toBeTruthy();
+        for (const tier of syn.tiers) {
+          const fam = texts.synergy[syn.family] as Record<string, { name: string; desc: string }>;
+          const t = fam[String(tier.count)]!;
+          expect(t?.name, `${locale}.${syn.family}.${tier.count}`).toBeTruthy();
+          const params = Object.keys(synergyTextParams(tier.effect));
+          for (const p of placeholders(t.desc))
+            expect(params, `${locale}.${syn.family}.${tier.count}: {${p}}`).toContain(p);
+        }
+      }
     }
   });
 
