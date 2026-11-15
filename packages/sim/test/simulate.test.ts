@@ -1,5 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { FORWARD, KNIGHT_JUMPS, createSetup, placeArmy, simulate, steps } from '../src';
+import {
+  DEFAULT_RULES,
+  FORWARD,
+  KNIGHT_JUMPS,
+  createSetup,
+  placeArmy,
+  simulate,
+  steps,
+} from '../src';
 import type { BattleEvent } from '../src';
 import { at, def, dummy, eventsOfTick, knight, pawn, striker } from './helpers';
 
@@ -116,7 +124,7 @@ describe('конец боя', () => {
   });
 
   it('maxTicks настраивается', () => {
-    const rules = { width: 5, height: 6, maxTicks: 3, collisionDamage: 2 };
+    const rules = { ...DEFAULT_RULES, maxTicks: 3 };
     const r = simulate({ units: [at(dummy(), 'A', 0, 0), at(dummy(), 'B', 4, 5)] }, rules);
     expect(r.ticks).toBe(3);
   });
