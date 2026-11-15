@@ -9,6 +9,7 @@ import { easeInOutQuad, easeOutCubic } from './tween';
 
 /** Длительности анимаций на ×1, мс. */
 const MS = {
+  telegraph: 140,
   move: 240,
   lunge: 170,
   damageBeat: 60,
@@ -103,6 +104,7 @@ export class BattlePlayer {
     const token = ++v.slideToken;
     const from = { ...v.base };
     const dst = this.board.toScreen(to);
+    this.board.refreshHighlight();
     return this.tw.run(ms, (t) => {
       if (token !== v.slideToken) return; // перехвачен более новым сдвигом
       const k = ease(t);
@@ -120,6 +122,7 @@ export class BattlePlayer {
     const dy = target.base.y - v.base.y;
     const len = Math.hypot(dx, dy) || 1;
     const reach = Math.min(CELL * 0.35, len * 0.4);
+    await this.telegraph(target);
     this.board.unitLayer.addChild(v); // поверх остальных
     await this.tw.run(MS.lunge, (t) => {
       const k = Math.sin(t * Math.PI) * reach;
@@ -129,6 +132,23 @@ export class BattlePlayer {
     });
     v.lunge.x = v.lunge.y = 0;
     v.sync();
+  }
+
+  /** «Телеграф»: короткая вспышка-прицел на цели перед ударом. */
+  private async telegraph(target: UnitView): Promise<void> {
+    const ring = new Graphics()
+      .circle(0, 0, CELL * 0.44)
+      .stroke({ color: 0xff3b3b, width: 4 })
+      .circle(0, 0, CELL * 0.44)
+      .fill({ color: 0xff3b3b, alpha: 0.18 });
+    ring.position.set(target.base.x, target.base.y);
+    this.board.fxLayer.addChild(ring);
+    await this.tw.run(MS.telegraph, (t) => {
+      if (ring.destroyed) return;
+      ring.scale.set(1.35 - 0.35 * easeOutCubic(t));
+      ring.alpha = t < 0.7 ? 1 : 1 - (t - 0.7) / 0.3;
+    });
+    if (!ring.destroyed) ring.destroy();
   }
 
   private floatText(text: string, x: number, y: number, color: number, size = 20): void {
@@ -196,6 +216,7 @@ export class BattlePlayer {
     if (!v) return;
     // Убираем из карты сразу: последующие действия каскада уже не должны её находить.
     this.board.units.delete(id);
+    this.board.refreshHighlight();
     await this.tw.run(MS.death, (t) => {
       if (v.destroyed) return;
       v.alpha = 1 - t;

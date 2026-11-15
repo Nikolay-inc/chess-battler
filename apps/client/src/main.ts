@@ -13,7 +13,7 @@ const SPEEDS = [1, 2, 4];
 
 async function main(): Promise<void> {
   const rules = DEFAULT_RULES;
-  const board = new BoardView(rules.width, rules.height);
+  const board = new BoardView(rules);
 
   const app = new Application();
   await app.init({

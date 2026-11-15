@@ -6,6 +6,7 @@ import {
   KNIGHT_JUMPS,
   ORTHOGONAL,
   attackTargets,
+  attackZone,
   moveTargets,
   pushDirection,
   rays,
@@ -58,6 +59,20 @@ describe('шаблоны', () => {
       occupiedBy({ x: 0, y: 2 }, { x: 0, y: 4 }),
     );
     expect(cells).toEqual([{ x: 0, y: 2 }]);
+  });
+
+  it('зона атаки включает пустые клетки и первую фигуру на луче', () => {
+    const cells = attackZone(
+      rays([FORWARD]),
+      { x: 0, y: 0 },
+      'A',
+      R,
+      occupiedBy({ x: 0, y: 2 }, { x: 0, y: 4 }),
+    );
+    expect(cells).toEqual([
+      { x: 0, y: 1 },
+      { x: 0, y: 2 },
+    ]);
   });
 
   it('«вперёд» зеркалится для стороны B', () => {

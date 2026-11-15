@@ -82,3 +82,29 @@ export function attackTargets(
   }
   return out;
 }
+
+/**
+ * Зона атаки: все клетки, которые покрывает шаблон атаки (луч включает первую
+ * фигуру и обрывается на ней). Для подсветки в клиенте.
+ */
+export function attackZone(
+  pattern: Pattern,
+  from: Vec,
+  side: Side,
+  rules: Rules,
+  occupied: Occupied,
+): Vec[] {
+  const out: Vec[] = [];
+  for (const d of pattern.dirs) {
+    const dir = orient(d, side);
+    const range = pattern.slide ? (pattern.range ?? Infinity) : 1;
+    let p = from;
+    for (let i = 0; i < range; i++) {
+      p = add(p, dir);
+      if (!inBounds(p, rules)) break;
+      out.push(p);
+      if (occupied(p)) break;
+    }
+  }
+  return out;
+}
