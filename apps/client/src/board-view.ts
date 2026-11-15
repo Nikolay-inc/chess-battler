@@ -2,6 +2,7 @@ import { Circle, Container, Graphics, Rectangle, Text } from 'pixi.js';
 import { attackZone, moveTargets } from '@chess-battler/sim';
 import type { Family, Rules, Side, Stars, Vec } from '@chess-battler/sim';
 import { getUnit } from '@chess-battler/content';
+import type { BoardSkin } from '@chess-battler/content';
 import { t, unitName } from './i18n';
 import { px, tokens } from './theme/tokens';
 
@@ -9,6 +10,12 @@ export const CELL = 76;
 export const PAD = 10;
 /** Отступ между доской и скамейкой. */
 export const BENCH_GAP = 14;
+
+/** Цвет рамки своих фигур (косметика); null — цвет стороны. */
+let playerFrame: number | null = null;
+export function setPlayerFrame(hex: string | null): void {
+  playerFrame = hex ? parseInt(hex.slice(1), 16) : null;
+}
 
 export const SIDE_COLOR: Record<Side, number> = { A: px('sideA'), B: px('sideB') };
 export const GLYPH: Record<Family, string> = {
@@ -50,11 +57,13 @@ export class UnitView extends Container {
     const def = getUnit(look.defId);
     const color = SIDE_COLOR[look.side];
     const r = CELL * 0.38;
+    // Рамка своих фигур — косметика игрока (сторона A).
+    const ring = look.side === 'A' && playerFrame !== null ? playerFrame : color;
 
     const body = new Graphics()
       .circle(0, 0, r)
       .fill({ color: px('unitBody') })
-      .stroke({ color, width: look.stars > 1 ? 4 : 3 });
+      .stroke({ color: ring, width: look.stars > 1 ? 4 : 3 });
     if (look.stars === 3) body.circle(0, 0, r + 4).stroke({ color: px('accent'), width: 2 });
     const glyph = new Text({
       text: GLYPH[def.family],
@@ -153,6 +162,7 @@ export class BoardView extends Container {
   readonly unitLayer = new Container();
   readonly fxLayer = new Container();
   private readonly enemyVeil = new Container();
+  private readonly grid = new Graphics();
   private readonly veilText: Text;
   /** Фигура, для которой показаны клетки хода и атаки. */
   private focused: number | null = null;
@@ -163,26 +173,8 @@ export class BoardView extends Container {
 
   constructor(readonly rules: Rules) {
     super();
-    const grid = new Graphics();
-    for (let y = 0; y < this.rows; y++) {
-      for (let x = 0; x < this.cols; x++) {
-        const p = this.toScreen({ x, y });
-        const own = y < this.rows / 2 ? 'A' : 'B';
-        const light = (x + y) % 2 === 0;
-        const base =
-          own === 'A'
-            ? light
-              ? px('boardOwnLight')
-              : px('boardOwnDark')
-            : light
-              ? px('boardEnemyLight')
-              : px('boardEnemyDark');
-        grid.rect(p.x - CELL / 2, p.y - CELL / 2, CELL, CELL).fill({ color: base });
-      }
-    }
-    // Линия фронта.
-    const midY = PAD + (this.rows / 2) * CELL;
-    grid.rect(PAD, midY - 1, this.cols * CELL, 2).fill({ color: px('border'), alpha: 0.18 });
+    const grid = this.grid;
+    this.applySkin(null);
     // Тап по пустому полю снимает выделение.
     grid.eventMode = 'static';
     grid.hitArea = new Rectangle(0, 0, this.pixelWidth, this.pixelHeight);
@@ -224,6 +216,31 @@ export class BoardView extends Container {
   /** Обновить надписи после смены языка. */
   relabel(): void {
     this.veilText.text = t('play.enemyHidden');
+  }
+
+  /** Скин доски (косметика): цвета клеток; null — из дизайн-токенов. */
+  applySkin(skin: BoardSkin | null): void {
+    const color = (hex: string | undefined, token: Parameters<typeof px>[0]) =>
+      hex ? parseInt(hex.slice(1), 16) : px(token);
+    const g = this.grid.clear();
+    for (let y = 0; y < this.rows; y++) {
+      for (let x = 0; x < this.cols; x++) {
+        const p = this.toScreen({ x, y });
+        const own = y < this.rows / 2;
+        const light = (x + y) % 2 === 0;
+        const base = own
+          ? light
+            ? color(skin?.ownLight, 'boardOwnLight')
+            : color(skin?.ownDark, 'boardOwnDark')
+          : light
+            ? color(skin?.enemyLight, 'boardEnemyLight')
+            : color(skin?.enemyDark, 'boardEnemyDark');
+        g.rect(p.x - CELL / 2, p.y - CELL / 2, CELL, CELL).fill({ color: base });
+      }
+    }
+    // Линия фронта.
+    const midY = PAD + (this.rows / 2) * CELL;
+    g.rect(PAD, midY - 1, this.cols * CELL, 2).fill({ color: px('border'), alpha: 0.18 });
   }
 
   set veiled(v: boolean) {

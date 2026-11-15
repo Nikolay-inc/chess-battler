@@ -403,8 +403,10 @@ inspector_port = 8083
 # The Deno major version to use.
 deno_version = 2
 
-# [edge_runtime.secrets]
-# secret_key = "env(SECRET_VALUE)"
+# Секреты функций ТОЛЬКО для локального стека (в облаке — `supabase secrets set`).
+[edge_runtime.secrets]
+# Тестовая оплата (functions/dev-purchase). В облаке не задавать!
+ALLOW_DEV_PURCHASES = "1"
 
 [analytics]
 enabled = false

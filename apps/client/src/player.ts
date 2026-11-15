@@ -17,6 +17,14 @@ interface ActionContext {
   chainShown: number;
 }
 
+/** Цвета эффекта толчка (косметика); null — стандартные из токенов. */
+let pushFx: { arrow: number; chain: number } | null = null;
+export function setPushFx(fx: { arrow: string; chain: string } | null): void {
+  pushFx = fx
+    ? { arrow: parseInt(fx.arrow.slice(1), 16), chain: parseInt(fx.chain.slice(1), 16) }
+    : null;
+}
+
 const COLOR = {
   arrow: px('fxSpark'),
   chain: px('fxCollision'),
@@ -221,9 +229,9 @@ export class BattlePlayer {
     const g = new Graphics()
       .moveTo(-len / 2, 0)
       .lineTo(len / 2 - 10, 0)
-      .stroke({ color: COLOR.arrow, width: 6, cap: 'round' })
+      .stroke({ color: pushFx?.arrow ?? COLOR.arrow, width: 6, cap: 'round' })
       .poly([len / 2, 0, len / 2 - 16, -11, len / 2 - 16, 11])
-      .fill({ color: COLOR.arrow });
+      .fill({ color: pushFx?.arrow ?? COLOR.arrow });
     g.rotation = angle;
     g.position.set(v.base.x, v.base.y);
     this.board.fxLayer.addChild(g);
@@ -244,7 +252,9 @@ export class BattlePlayer {
     if (depth < 1) return;
     const v = this.unit(id);
     if (!v) return;
-    const wave = new Graphics().circle(0, 0, CELL * 0.4).stroke({ color: COLOR.chain, width: 5 });
+    const wave = new Graphics()
+      .circle(0, 0, CELL * 0.4)
+      .stroke({ color: pushFx?.chain ?? COLOR.chain, width: 5 });
     wave.position.set(v.base.x, v.base.y);
     this.board.fxLayer.addChild(wave);
     void this.tw
@@ -261,7 +271,7 @@ export class BattlePlayer {
         t('battle.chain', { n: links }),
         v.base.x,
         v.base.y - CELL * 0.55,
-        COLOR.chain,
+        pushFx?.chain ?? COLOR.chain,
         18,
       );
     }

@@ -19,7 +19,18 @@ import { CollectionScreen } from './screens/collection';
 import { renderHome } from './screens/home';
 import { ProfileScreen } from './screens/profile';
 import { renderSettings } from './screens/settings';
-import { renderStore } from './screens/store';
+import { StoreScreen } from './screens/store';
+import {
+  DevProvider,
+  StubProvider,
+  TelegramStarsProvider,
+  pickProvider,
+} from './payments/provider';
+import type { InvokeFn, TelegramWebAppPayments } from './payments/provider';
+import { PurchasesStore } from './payments/purchases';
+import { getCosmetic } from '@chess-battler/content';
+import { setPlayerFrame } from './board-view';
+import { setPushFx } from './player';
 import { SettingsStore } from './settings';
 import { loadRun, saveRun } from './storage';
 import { $, hideInfo } from './ui';
@@ -122,6 +133,34 @@ async function main(): Promise<void> {
   const sfx = new Sfx(settings);
   player.sound = (s) => sfx.play(s);
 
+  // ---------- Покупки (косметика) ----------
+  const purchases = new PurchasesStore(account);
+  const invoke: InvokeFn = async (name, body) => {
+    if (!account.client) return { data: null, error: { message: 'unavailable' } };
+    const { data, error } = await account.client.functions.invoke(name, { body });
+    return { data, error: error ? { message: error.message } : null };
+  };
+  const telegramWebApp = () =>
+    (globalThis as { Telegram?: { WebApp?: TelegramWebAppPayments } }).Telegram?.WebApp;
+  // Порядок — приоритет: Telegram Stars → тестовая оплата (dev) → магазины платформ (заглушки).
+  const providers = [
+    new TelegramStarsProvider(invoke, telegramWebApp),
+    import.meta.env.DEV && import.meta.env.VITE_DEV_PURCHASES === '1'
+      ? new DevProvider(invoke)
+      : null,
+    new StubProvider('app_store'),
+    new StubProvider('google_play'),
+    new StubProvider('stripe'),
+  ];
+  // Надетые скины — только отрисовка: доска, рамка своих фигур, эффект толчка.
+  const applyCosmetics = () => {
+    const e = purchases.equipped;
+    board.applySkin(getCosmetic(e.board)?.board ?? null);
+    setPlayerFrame(getCosmetic(e.frame)?.frame ?? null);
+    setPushFx(getCosmetic(e.pushFx)?.pushFx ?? null);
+  };
+  applyCosmetics();
+
   // Аналитика: в проде отправляется в Supabase, в dev — только в консоль.
   const analytics = new Analytics({
     url: import.meta.env.VITE_SUPABASE_URL,
@@ -192,6 +231,16 @@ async function main(): Promise<void> {
   const router = new Router();
   const collection = new CollectionScreen();
   const profileScreen = new ProfileScreen(account, profiles, () => router.route === 'profile');
+  const storeScreen = new StoreScreen(
+    account,
+    purchases,
+    () => pickProvider(providers),
+    () => router.route === 'shop',
+  );
+  purchases.onChange(() => {
+    applyCosmetics();
+    game.relocalize(); // перерисовать фигуры с новой рамкой
+  });
   const accountLabel = () => {
     const s = account.state;
     return (
@@ -214,7 +263,7 @@ async function main(): Promise<void> {
       game.enter();
     },
     collection: () => collection.show(),
-    shop: () => renderStore(),
+    shop: () => storeScreen.render(),
     profile: () => profileScreen.render(),
     settings: () =>
       renderSettings(settings, {
@@ -262,7 +311,19 @@ async function main(): Promise<void> {
   // Отладочный доступ в dev-сборке: ручная прокрутка тикера, замеры темпа.
   if (import.meta.env.DEV)
     Object.assign(window, {
-      __debug: { app, player, game, board, bench, analytics, router, settings, account, profiles },
+      __debug: {
+        app,
+        player,
+        game,
+        board,
+        bench,
+        analytics,
+        router,
+        settings,
+        account,
+        profiles,
+        purchases,
+      },
     });
 }
 

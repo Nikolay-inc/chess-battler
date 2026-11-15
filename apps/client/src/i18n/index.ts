@@ -88,6 +88,13 @@ export function unitDesc(def: UnitDef): string {
   return format(tpl, unitTextParams(def));
 }
 
+export function cosmeticName(id: string): string {
+  return (content().cosmetic.item as Record<string, string>)[id] ?? id;
+}
+
+export const cosmeticKindName = (kind: 'board' | 'frame' | 'pushFx'): string =>
+  content().cosmetic.kind[kind];
+
 export function synergyName(f: Family, count: number): string {
   const fam = content().synergy[f] as Record<string, { name: string; desc: string }>;
   return fam[String(count)]?.name ?? `${f}:${count}`;

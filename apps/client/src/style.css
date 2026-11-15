@@ -1165,3 +1165,38 @@ button.danger {
   color: var(--color-text-muted);
   font-variant-numeric: tabular-nums;
 }
+
+/* ---------- Витрина скинов ---------- */
+
+.store-section {
+  margin-bottom: var(--space-lg);
+}
+.store-card button {
+  margin-top: auto;
+}
+.swatch {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.swatch-frame,
+.swatch-pushFx {
+  background: var(--color-surface-raised);
+}
+.swatch-ring {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 3px solid;
+  border-radius: 50%;
+  background: var(--color-unit-body);
+  color: var(--color-side-a);
+  font-family: var(--font-glyph);
+  font-size: var(--font-size-xxl);
+}
+.swatch-arrow {
+  font-size: var(--font-size-h1);
+  line-height: 1;
+}
