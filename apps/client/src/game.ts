@@ -59,6 +59,10 @@ export interface GameHooks {
   onFeedback(state: RunState, rating: number, annoyed: string): void;
   /** Перед каждым боем (например, выставить скорость по умолчанию). */
   onBattleStart(): void;
+  /** Успешное действие забега (звук покупки и т.п.). */
+  onAction(action: RunAction): void;
+  /** Показан итог боя (звук победы/поражения). */
+  onResultShown(outcome: RoundOutcome): void;
 }
 
 export class Game {
@@ -161,6 +165,7 @@ export class Game {
       throw e;
     }
     this.hooks.save(this.state);
+    this.hooks.onAction(action);
     this.renderPrep();
     return true;
   }
@@ -271,6 +276,7 @@ export class Game {
         },
       ],
     });
+    this.hooks.onResultShown(outcome);
   }
 
   private afterBattle(): void {

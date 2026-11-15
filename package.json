@@ -16,13 +16,16 @@
     "format:check": "prettier --check .",
     "typecheck": "pnpm -r typecheck",
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
-    "balance": "pnpm --filter @chess-battler/bots balance --"
+    "balance": "pnpm --filter @chess-battler/bots balance --",
+    "supabase:start": "supabase start -x studio,imgproxy,storage-api,realtime,logflare,vector,supavisor,postgres-meta",
+    "supabase:stop": "supabase stop"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
     "eslint": "^9.39.5",
     "globals": "^16",
     "prettier": "^3.10.1",
+    "supabase": "3.1.0",
     "tsx": "^4.23.15",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.72.2",

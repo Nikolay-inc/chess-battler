@@ -2,7 +2,10 @@ import { Application } from 'pixi.js';
 import { RUN_CONFIG } from '@chess-battler/content';
 import { DEFAULT_RULES, createRun } from '@chess-battler/sim';
 import type { RunState } from '@chess-battler/sim';
+import { Account } from './account';
 import { Analytics, deviceId, sessionTracker } from './analytics';
+import { ProfileStore, runRecord } from './profile-store';
+import { Sfx } from './sfx';
 import { feedbackRow, runId, snapshotRow } from './telemetry';
 import { BENCH_GAP, BenchView, BoardView } from './board-view';
 import { Game } from './game';
@@ -14,7 +17,7 @@ import { Router } from './router';
 import type { Route } from './router';
 import { CollectionScreen } from './screens/collection';
 import { renderHome } from './screens/home';
-import { renderProfile } from './screens/profile';
+import { ProfileScreen } from './screens/profile';
 import { renderSettings } from './screens/settings';
 import { renderStore } from './screens/store';
 import { SettingsStore } from './settings';
@@ -106,6 +109,19 @@ async function main(): Promise<void> {
   const versionText = `v${version} · ${build}${isPreview ? ` · ${deployEnv}` : ''}`;
   $('version').textContent = versionText;
 
+  // Аккаунт (Supabase Auth): гость по умолчанию; в проде включится на шаге деплоя.
+  const account = new Account({
+    url: import.meta.env.VITE_SUPABASE_URL,
+    key: import.meta.env.VITE_SUPABASE_KEY,
+    enabled: import.meta.env.VITE_AUTH_ENABLED === '1',
+    // Без hash-маршрута: Supabase дописывает токены в hash, второй «#» их ломает.
+    // После входа (см. ниже) открываем профиль и убираем ?auth=callback из адреса.
+    redirectTo: `${location.origin}${location.pathname}?auth=callback`,
+  });
+  const profiles = new ProfileStore(account, settings);
+  const sfx = new Sfx(settings);
+  player.sound = (s) => sfx.play(s);
+
   // Аналитика: в проде отправляется в Supabase, в dev — только в консоль.
   const analytics = new Analytics({
     url: import.meta.env.VITE_SUPABASE_URL,
@@ -113,6 +129,7 @@ async function main(): Promise<void> {
     enabled: (import.meta.env.PROD && !isPreview) || import.meta.env.VITE_ANALYTICS_DEV === '1',
     deviceId: deviceId(),
     sessionId: sessionTracker(),
+    userId: () => account.state.userId,
     appVersion,
   });
   analytics.autoFlush();
@@ -147,6 +164,8 @@ async function main(): Promise<void> {
         rounds: s.history.length,
       });
       void analytics.flush();
+      // История забегов профиля (локально сразу, на сервер — когда есть вход).
+      void profiles.recordRun(runRecord(s, runId(s), appVersion));
     },
     onFeedback: (s, rating, annoyed) => {
       analytics.send('run_feedback', feedbackRow(s, rating, annoyed));
@@ -157,6 +176,11 @@ async function main(): Promise<void> {
       speedIdx = Math.max(0, SPEEDS.indexOf(settings.current.speed));
       speedBtn.textContent = `×${SPEEDS[speedIdx]}`;
     },
+    onAction: (a) => {
+      if (a.type === 'buy') sfx.play('buy');
+    },
+    onResultShown: (outcome) =>
+      sfx.play(outcome === 'win' ? 'win' : outcome === 'loss' ? 'loss' : 'tap'),
   });
   if (!saved) {
     saveRun(initial);
@@ -167,6 +191,14 @@ async function main(): Promise<void> {
   // ---------- Навигация ----------
   const router = new Router();
   const collection = new CollectionScreen();
+  const profileScreen = new ProfileScreen(account, profiles, () => router.route === 'profile');
+  const accountLabel = () => {
+    const s = account.state;
+    return (
+      profiles.profile.nickname ??
+      (s.anonymous ? t('settings.guest') : (s.email ?? t('settings.guest')))
+    );
+  };
   const show: Record<Route, () => void> = {
     home: () =>
       renderHome(game.current, RUN_CONFIG, {
@@ -183,8 +215,13 @@ async function main(): Promise<void> {
     },
     collection: () => collection.show(),
     shop: () => renderStore(),
-    profile: () => renderProfile(),
-    settings: () => renderSettings(settings, versionText),
+    profile: () => profileScreen.render(),
+    settings: () =>
+      renderSettings(settings, {
+        version: versionText,
+        accountLabel: accountLabel(),
+        openProfile: () => router.go('profile'),
+      }),
   };
   router.onChange((route) => {
     document.body.dataset.route = route;
@@ -213,11 +250,19 @@ async function main(): Promise<void> {
     show[router.route]();
   });
   router.sync();
+  // Вход гостем / восстановление сессии — не блокирует игру.
+  void account.init().then(() => {
+    // Возврат по ссылке из письма / OAuth: supabase-js уже разобрал токены из hash.
+    if (new URLSearchParams(location.search).get('auth') === 'callback') {
+      history.replaceState(null, '', `${location.pathname}#/profile`);
+      router.sync();
+    }
+  });
 
   // Отладочный доступ в dev-сборке: ручная прокрутка тикера, замеры темпа.
   if (import.meta.env.DEV)
     Object.assign(window, {
-      __debug: { app, player, game, board, bench, analytics, router, settings },
+      __debug: { app, player, game, board, bench, analytics, router, settings, account, profiles },
     });
 }
 

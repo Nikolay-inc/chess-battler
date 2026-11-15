@@ -28,6 +28,11 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
   },
   {
+    // Edge Functions Supabase — рантайм Deno.
+    files: ['supabase/functions/**/*.ts'],
+    languageOptions: { globals: { Deno: 'readonly' } },
+  },
+  {
     files: ['packages/sim/src/**/*.ts'],
     rules: {
       'no-restricted-globals': [

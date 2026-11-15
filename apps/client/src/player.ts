@@ -63,6 +63,9 @@ const MS = {
 export class BattlePlayer {
   private skipping = false;
 
+  /** Звук события боя (подключается снаружи; в тестах и без звука — пустая функция). */
+  sound: (s: 'hit' | 'collision' | 'death' | 'storm') => void = () => {};
+
   constructor(
     private readonly board: BoardView,
     private readonly tw: Tweener,
@@ -121,6 +124,7 @@ export class BattlePlayer {
       case 'push':
         return this.push(e.unit, e.from, e.to, e.depth, ctx);
       case 'attack':
+        if (!this.skipping) this.sound('hit');
         return this.attack(e.unit, e.target);
       case 'damage':
         return this.damage(e.unit, e.amount, e.hp, e.source, e.absorbed ?? 0);
@@ -145,11 +149,14 @@ export class BattlePlayer {
       case 'promote':
         return this.promote(e.unit, e.hp);
       case 'storm':
+        if (!this.skipping) this.sound('storm');
         return this.storm(e.atk);
       case 'collision':
+        if (!this.skipping) this.sound('collision');
         this.chain(e.unit, e.depth, ctx);
         return this.collision(e.unit, e.other, e.at);
       case 'death':
+        if (!this.skipping) this.sound('death');
         return this.death(e.unit);
       case 'tick':
       case 'end':

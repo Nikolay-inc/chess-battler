@@ -121,13 +121,38 @@
     "footer": "{hearts}  ·  Wins {wins}/{target}"
   },
   "count": {
-    "ticks": { "one": "{n} tick", "other": "{n} ticks" },
-    "damage": { "one": "{n} damage", "other": "{n} damage" },
-    "ticksWord": { "one": "tick", "other": "ticks" },
-    "winsWord": { "one": "win", "other": "wins" },
-    "lossesWord": { "one": "loss", "other": "losses" },
-    "roundsWord": { "one": "round", "other": "rounds" },
-    "tier": { "one": "{n} unit · {name}", "other": "{n} units · {name}" }
+    "ticks": {
+      "one": "{n} tick",
+      "other": "{n} ticks"
+    },
+    "damage": {
+      "one": "{n} damage",
+      "other": "{n} damage"
+    },
+    "ticksWord": {
+      "one": "tick",
+      "other": "ticks"
+    },
+    "winsWord": {
+      "one": "win",
+      "other": "wins"
+    },
+    "lossesWord": {
+      "one": "loss",
+      "other": "losses"
+    },
+    "roundsWord": {
+      "one": "round",
+      "other": "rounds"
+    },
+    "tier": {
+      "one": "{n} unit · {name}",
+      "other": "{n} units · {name}"
+    },
+    "winsCount": {
+      "one": "{n} win",
+      "other": "{n} wins"
+    }
   },
   "runEnd": {
     "won": "Run cleared!",
@@ -176,13 +201,45 @@
     "guest": "Guest",
     "notLinked": "Account not linked",
     "link": "Link account",
-    "linkHint": "Coming soon: sign in with email or Google — your progress stays",
+    "linkHint": "Link an email or Google — your progress stays and works on other devices",
     "runs": "Runs",
     "wins": "Wins",
     "best": "Best result",
     "favorite": "Favorite family",
     "history": "Recent runs",
-    "historyEmpty": "Your run history will appear here"
+    "historyEmpty": "Your run history will appear here",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel",
+    "nickname": "Nickname",
+    "nicknamePlaceholder": "Your nickname",
+    "nicknameInvalid": "Nickname: 2–20 letters, digits, spaces, _ or -",
+    "avatar": "Avatar",
+    "saved": "Profile saved",
+    "linkedEmail": "Account: {email}",
+    "linkedGoogle": "Google account",
+    "account": "Account",
+    "emailPlaceholder": "email@example.com",
+    "emailInvalid": "Enter a valid email",
+    "linkEmail": "Link email",
+    "linkEmailSent": "We sent an email to {email} — open the link in it",
+    "linkGoogle": "Link Google",
+    "googleUnavailable": "Google sign-in isn't set up yet",
+    "haveAccount": "Already have an account? Sign in — this guest profile will be replaced",
+    "signIn": "Sign in with email",
+    "signInSent": "A sign-in link was sent to {email}",
+    "signOut": "Sign out",
+    "signOutConfirm": "Sign out? You'll become a new guest on this device.",
+    "deleteAccount": "Delete account",
+    "deleteConfirm": "Delete your account and all data — profile, history, stats? This cannot be undone.",
+    "deleted": "Account and data deleted",
+    "error": "Something went wrong: {error}",
+    "offline": "No connection — your profile is stored on this device for now",
+    "authDisabled": "Sign-in is coming later — for now your profile is stored on this device",
+    "loading": "Loading…",
+    "bestWon": "Cleared",
+    "resultWon": "Cleared",
+    "resultLost": "Wins: {wins}"
   },
   "settings": {
     "title": "Settings",
@@ -196,8 +253,9 @@
     "vibration": "Vibration",
     "account": "Account",
     "guest": "Guest",
-    "link": "Link",
-    "linkHint": "Email and Google sign-in — coming soon",
-    "version": "Version {version}"
+    "link": "Open",
+    "linkHint": "Account linking, sign-out and deletion are in your profile",
+    "version": "Version {version}",
+    "musicHint": "Music is coming in a future update"
   }
 }

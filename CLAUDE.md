@@ -52,6 +52,17 @@ pnpm check        # всё, что гоняет CI: format:check + lint + typech
 pnpm balance      # 10 000 боёв «бот против бота» (--battles N --seed S --json файл)
 ```
 
+Локальный Supabase (Docker, минимальный набор сервисов: база, Auth, REST, Edge Functions,
+почтовый ящик Mailpit для писем со ссылками — http://127.0.0.1:54324):
+
+```bash
+pnpm supabase:start   # поднять стек и применить supabase/migrations
+pnpm supabase:stop    # остановить (данные сохраняются)
+```
+
+`pnpm dev` ходит в локальный стек (`apps/client/.env.development`), прод-сборка — в облако
+(`apps/client/.env`, вход там выключен `VITE_AUTH_ENABLED=0` до настройки облака).
+
 Деплой: каждый push в `main` → `.github/workflows/deploy.yml` → GitHub Pages
 (https://nikolay-inc.github.io/chess-battler/). Сборка с `base: './'`.
 
@@ -124,9 +135,9 @@ pnpm balance      # 10 000 боёв «бот против бота» (--battles 
   `[data-screen]` в `index.html`, видимость по `body[data-route]`. Роутер на `#/…`
   (`router.ts`), экраны — `src/screens/*`. На экране забега панель вкладок скрыта,
   «Назад» ведёт на главную (в бою скрыта). При входе на забег canvas пересчитывается явно.
-- Настройки (`settings.ts`) — localStorage с разбором битых значений; скорость боя по
-  умолчанию применяется в начале каждого боя, язык — сразу. Звук, музыка, вибрация пока
-  только сохраняются (подэтап C).
+- Настройки (`settings.ts`) — localStorage с разбором битых значений (и `profiles.settings`
+  после входа); скорость боя по умолчанию применяется в начале каждого боя, язык — сразу,
+  звук и вибрация — к эффектам боя и магазина. Музыка пока только сохраняется.
 
 ## Локализация (ru, uk, bg, en)
 
@@ -141,6 +152,23 @@ pnpm balance      # 10 000 боёв «бот против бота» (--battles 
 - Тесты: во всех языках те же ключи, плейсхолдеры и нужные формы множественного числа;
   ключи `data-i18n` существуют; в коде клиента нет кириллицы вне комментариев.
 - uk/bg/en написаны не носителями — перед релизом отдать на вычитку.
+
+## Аккаунт и профиль (подэтап C)
+
+- `account.ts` — Supabase Auth: гость (`signInAnonymously`) по умолчанию; привязка email
+  (`updateUser`, письмо подтверждения обязательно) и Google (`linkIdentity`) **сохраняют id**,
+  поэтому прогресс гостя остаётся; вход в существующий аккаунт — magic link
+  (`signInWithOtp`, `shouldCreateUser: false`); выход → новый гость; удаление —
+  Edge Function `supabase/functions/delete-account` (service role: аналитика по `user_id`,
+  затем пользователь Auth, профиль и история — каскадом).
+- Адрес возврата из писем/OAuth — `/?auth=callback` **без hash-маршрута**: Supabase дописывает
+  токены в hash, второй `#` их ломает. После входа клиент открывает `#/profile`.
+- `profile-store.ts` — профиль (ник, аватар), история забегов (локальный кэш + `run_history`,
+  неотправленное доотправляется), статистика, синхронизация настроек с `profiles.settings`
+  (при входе на новом устройстве серверные настройки главнее). Кэш другого владельца сбрасывается.
+- Google: провайдер в `supabase/config.toml` выключен до client id/secret (env-переменные,
+  redirect URI локально — `http://127.0.0.1:54321/auth/v1/callback`). Apple — заготовка.
+- Звук — синтез WebAudio (`sfx.ts`, без ассетов), вибрация — `navigator.vibrate`; музыки пока нет.
 
 ## Клиент: проигрывание боя
 

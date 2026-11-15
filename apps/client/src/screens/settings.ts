@@ -23,13 +23,20 @@ function toggle(label: string, on: boolean, change: (v: boolean) => void): HTMLE
 }
 
 /** Настройки: язык, звук, музыка, скорость боя по умолчанию, вибрация, аккаунт. */
-export function renderSettings(store: SettingsStore, version: string): void {
+export interface SettingsContext {
+  readonly version: string;
+  /** Подпись аккаунта: ник/email или «Гость». */
+  readonly accountLabel: string;
+  openProfile(): void;
+}
+
+export function renderSettings(store: SettingsStore, ctx: SettingsContext): void {
   const s: Settings = store.current;
   const root = $('settings');
   root.replaceChildren();
   const redraw = (patch: Partial<Settings>) => {
     store.update(patch);
-    renderSettings(store, version);
+    renderSettings(store, ctx);
   };
 
   // Язык: «Авто» + названия языков на них самих (их не переводим).
@@ -74,6 +81,7 @@ export function renderSettings(store: SettingsStore, version: string): void {
     row(
       t('settings.music'),
       toggle(t('settings.music'), s.music, (v) => redraw({ music: v })),
+      t('settings.musicHint'),
     ),
     row(
       t('settings.vibration'),
@@ -84,11 +92,15 @@ export function renderSettings(store: SettingsStore, version: string): void {
   const account = el('section', 'page-section');
   const link = el('button', 'secondary', t('settings.link'));
   link.type = 'button';
-  link.disabled = true;
+  link.addEventListener('click', () => ctx.openProfile());
   account.append(
     el('h2', 'section-title', t('settings.account')),
-    row(t('settings.guest'), link, t('settings.linkHint')),
+    row(ctx.accountLabel, link, t('settings.linkHint')),
   );
 
-  root.append(game, account, el('p', 'hint center', t('settings.version', { version })));
+  root.append(
+    game,
+    account,
+    el('p', 'hint center', t('settings.version', { version: ctx.version })),
+  );
 }

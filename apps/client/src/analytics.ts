@@ -20,6 +20,8 @@ export interface AnalyticsOptions {
   readonly deviceId: string;
   /** Текущий id сессии (см. sessionTracker). */
   readonly sessionId: () => string;
+  /** id пользователя Supabase Auth (для удаления аккаунта со всеми данными); null — без входа. */
+  readonly userId?: () => string | null;
   readonly appVersion: string;
   readonly transport?: Transport;
   readonly now?: () => Date;
@@ -58,6 +60,7 @@ export class Analytics {
       ...fields,
       device_id: this.opts.deviceId,
       session_id: this.opts.sessionId(),
+      ...(this.opts.userId?.() ? { user_id: this.opts.userId() } : {}),
       app_version: this.opts.appVersion,
     };
     (this.opts.log ?? ((t, r) => console.info(`[analytics] ${t}`, r)))(table, row);
