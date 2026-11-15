@@ -12,12 +12,25 @@ import {
   simulate,
   unitCost,
 } from '@chess-battler/sim';
-import type { Location, OwnedUnit, RoundOutcome, RunAction, RunState } from '@chess-battler/sim';
+import type {
+  BattleResult,
+  Location,
+  OwnedUnit,
+  RoundOutcome,
+  RunAction,
+  RunState,
+} from '@chess-battler/sim';
 import type { BenchView, BoardView } from './board-view';
 import type { BattlePlayer } from './player';
 import { PrepController } from './prep';
 import { Tutorial } from './tutorial';
-import { PLAYER_SIDE, renderResult, renderRunEnd } from './result-view';
+import {
+  PLAYER_SIDE,
+  feedbackGiven,
+  markFeedbackGiven,
+  renderResult,
+  renderRunEnd,
+} from './result-view';
 import {
   $,
   boardSynergies,
@@ -49,8 +62,10 @@ export interface GameHooks {
   save(state: RunState): void;
   /** Аналитика: начало забега, конец раунда, конец забега. */
   onRunStart(state: RunState): void;
-  onRoundEnd(before: RunState, after: RunState, outcome: RoundOutcome, ticks: number): void;
+  onRoundEnd(before: RunState, after: RunState, outcome: RoundOutcome, result: BattleResult): void;
   onRunEnd(state: RunState): void;
+  /** Ответ на опрос в конце забега. */
+  onFeedback(state: RunState, rating: number, annoyed: string): void;
 }
 
 export class Game {
@@ -224,7 +239,7 @@ export class Game {
     const after = applyAction(before, { type: 'roundEnd', outcome }, RUN_CONFIG, DEFAULT_RULES);
     this.state = after;
     this.hooks.save(after);
-    this.hooks.onRoundEnd(before, after, outcome, result.ticks);
+    this.hooks.onRoundEnd(before, after, outcome, result);
     if (after.status !== 'shop') this.hooks.onRunEnd(after);
 
     document.body.dataset.phase = 'battle';
@@ -263,6 +278,13 @@ export class Game {
       $('result'),
       { won: s.status === 'won', wins: s.wins, losses: s.losses, rounds: s.history.length },
       () => this.newRun(),
+      {
+        answered: feedbackGiven(s.seed),
+        onSubmit: (rating, annoyed) => {
+          markFeedbackGiven(s.seed);
+          this.hooks.onFeedback(s, rating, annoyed);
+        },
+      },
     );
   }
 

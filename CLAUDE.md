@@ -143,6 +143,9 @@ pnpm balance      # 10 000 боёв «бот против бота» (--battles 
 - Данные фигур (баланс) — только в `packages/content`. Идентификаторы — латиница
   (`legionnaire`), отображаемые имена — по-русски.
 - Код и идентификаторы — на английском, комментарии и документация — можно по-русски.
-- Аналитика (`apps/client/src/analytics.ts`): события `run_start`, `round_end`, `run_end` в
-  `public.analytics_events` (Supabase REST, publishable-ключ в `apps/client/.env`, RLS —
-  только вставка). Отправляется только из прод-сборки; в dev — в консоль.
+- Аналитика (`apps/client/src/analytics.ts`, строки — `telemetry.ts`): события `run_start`,
+  `round_end` (с `reason`), `run_end` в `analytics_events`; снимок армии после каждого раунда в
+  `army_snapshots`; опрос конца забега в `run_feedback`. Во всех строках `device_id` (анонимный
+  id игрока), `session_id` (новая сессия после 30 мин тишины) и `app_version`. Supabase REST,
+  publishable-ключ в `apps/client/.env`, RLS — только вставка. Отправляется только из
+  прод-сборки; в dev — в консоль. Метрики проверки 2 — представления `pt2_*` (см. миграции).

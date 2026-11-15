@@ -637,3 +637,50 @@ body:has(#result:not([hidden])) .coach {
   pointer-events: none;
   font-variant-numeric: tabular-nums;
 }
+
+/* ---------- Опрос в конце забега ---------- */
+
+.feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.feedback-title,
+.feedback-thanks {
+  margin: 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+.feedback-thanks {
+  color: var(--accent);
+}
+.feedback-stars {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+.star {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 0;
+  font-size: 26px;
+  line-height: 1;
+  background: transparent;
+  color: #3a3f4d;
+}
+.star.on {
+  color: var(--accent);
+}
+.feedback-text {
+  width: 100%;
+  min-height: 52px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  resize: none;
+}

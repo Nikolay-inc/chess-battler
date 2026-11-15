@@ -2,7 +2,8 @@ import { Application } from 'pixi.js';
 import { RUN_CONFIG } from '@chess-battler/content';
 import { DEFAULT_RULES, createRun } from '@chess-battler/sim';
 import type { RunState } from '@chess-battler/sim';
-import { Analytics, deviceId } from './analytics';
+import { Analytics, deviceId, sessionTracker } from './analytics';
+import { feedbackRow, runId, snapshotRow } from './telemetry';
 import { BENCH_GAP, BenchView, BoardView } from './board-view';
 import { Game } from './game';
 import { BattlePlayer } from './player';
@@ -77,10 +78,10 @@ async function main(): Promise<void> {
     key: import.meta.env.VITE_SUPABASE_KEY,
     enabled: import.meta.env.PROD || import.meta.env.VITE_ANALYTICS_DEV === '1',
     deviceId: deviceId(),
+    sessionId: sessionTracker(),
     appVersion,
   });
   analytics.autoFlush();
-  const runId = (s: RunState) => s.seed.toString(16);
 
   // Продолжаем сохранённый забег, если он есть.
   const saved = loadRun(RUN_CONFIG);
@@ -89,16 +90,21 @@ async function main(): Promise<void> {
   const game: Game = new Game(app, board, bench, player, initial, {
     save: saveRun,
     onRunStart: (s) => analytics.track('run_start', runId(s), { seed: s.seed }),
-    onRoundEnd: (before, after, outcome, ticks) =>
+    onRoundEnd: (before, after, outcome, result) => {
       analytics.track('round_end', runId(before), {
         round: before.round,
         result: outcome,
+        // Как закончился бой: elimination — армия разбита, timeout — 30 тактов.
+        reason: result.reason,
         // Время подготовки раунда: от начала раунда до нажатия «В бой».
         duration_ms: game.roundElapsedMs(),
-        battle_ticks: ticks,
+        battle_ticks: result.ticks,
         wins: after.wins,
         lives: after.lives,
-      }),
+      });
+      // Снимок армии перед боем — будущий пул призраков (пока не используется).
+      analytics.send('army_snapshots', snapshotRow(before, outcome));
+    },
     onRunEnd: (s) => {
       analytics.track('run_end', runId(s), {
         result: s.status,
@@ -106,6 +112,10 @@ async function main(): Promise<void> {
         losses: s.losses,
         rounds: s.history.length,
       });
+      void analytics.flush();
+    },
+    onFeedback: (s, rating, annoyed) => {
+      analytics.send('run_feedback', feedbackRow(s, rating, annoyed));
       void analytics.flush();
     },
   });

@@ -110,8 +110,86 @@ export interface RunEndInfo {
   readonly rounds: number;
 }
 
+const FEEDBACK_KEY = 'chess-battler.feedback';
+
+/** Отвечал ли игрок на опрос по этому забегу (чтобы не спрашивать дважды после перезагрузки). */
+export function feedbackGiven(seed: number): boolean {
+  try {
+    return (JSON.parse(localStorage.getItem(FEEDBACK_KEY) ?? '[]') as number[]).includes(seed);
+  } catch {
+    return false;
+  }
+}
+
+export function markFeedbackGiven(seed: number): void {
+  try {
+    const list = JSON.parse(localStorage.getItem(FEEDBACK_KEY) ?? '[]') as number[];
+    localStorage.setItem(FEEDBACK_KEY, JSON.stringify([...list.slice(-49), seed]));
+  } catch {
+    // без хранилища опрос может показаться снова — не страшно
+  }
+}
+
+export interface FeedbackOptions {
+  readonly answered: boolean;
+  onSubmit(rating: number, annoyed: string): void;
+}
+
+/** Опрос: оценка 1–5 и «Что раздражало?». Необязательный. */
+function feedbackForm(fb: FeedbackOptions): HTMLElement {
+  const box = el('form', 'feedback') as HTMLFormElement;
+  if (fb.answered) {
+    box.append(el('p', 'feedback-thanks', 'Спасибо за отзыв!'));
+    return box;
+  }
+  box.append(el('p', 'feedback-title', 'Как вам забег?'));
+  let rating = 0;
+  const stars = el('div', 'feedback-stars');
+  stars.setAttribute('role', 'radiogroup');
+  stars.setAttribute('aria-label', 'Оценка от 1 до 5');
+  const buttons: HTMLButtonElement[] = [];
+  for (let i = 1; i <= 5; i++) {
+    const b = el('button', 'star', '★') as HTMLButtonElement;
+    b.type = 'button';
+    b.setAttribute('role', 'radio');
+    b.setAttribute('aria-label', `${i} из 5`);
+    b.setAttribute('aria-checked', 'false');
+    b.addEventListener('click', () => {
+      rating = i;
+      buttons.forEach((x, j) => {
+        x.classList.toggle('on', j < i);
+        x.setAttribute('aria-checked', String(j === i - 1));
+      });
+      send.disabled = false;
+    });
+    buttons.push(b);
+    stars.append(b);
+  }
+  const text = el('textarea', 'feedback-text') as HTMLTextAreaElement;
+  text.placeholder = 'Что раздражало? (необязательно)';
+  text.maxLength = 1000;
+  text.rows = 2;
+  text.setAttribute('aria-label', 'Что раздражало?');
+  const send = el('button', 'secondary feedback-send', 'Отправить отзыв') as HTMLButtonElement;
+  send.type = 'submit';
+  send.disabled = true;
+  box.addEventListener('submit', (e) => {
+    e.preventDefault();
+    if (rating < 1) return;
+    fb.onSubmit(rating, text.value);
+    box.replaceChildren(el('p', 'feedback-thanks', 'Спасибо за отзыв!'));
+  });
+  box.append(stars, text, send);
+  return box;
+}
+
 /** Экран конца забега. */
-export function renderRunEnd(root: HTMLElement, info: RunEndInfo, onNewRun: () => void): void {
+export function renderRunEnd(
+  root: HTMLElement,
+  info: RunEndInfo,
+  onNewRun: () => void,
+  feedback?: FeedbackOptions,
+): void {
   root.replaceChildren();
   root.dataset.outcome = info.won ? 'win' : 'loss';
   root.append(
@@ -130,6 +208,7 @@ export function renderRunEnd(root: HTMLElement, info: RunEndInfo, onNewRun: () =
     stat(String(info.rounds), plural(info.rounds, 'раунд', 'раунда', 'раундов')),
   );
   root.append(stats);
+  if (feedback) root.append(feedbackForm(feedback));
   appendButtons(root, [{ label: 'Новый забег', primary: true, onClick: onNewRun }]);
   root.hidden = false;
 }
