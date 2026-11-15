@@ -2,6 +2,7 @@ import { Application } from 'pixi.js';
 import { RUN_CONFIG } from '@chess-battler/content';
 import { DEFAULT_RULES, createRun } from '@chess-battler/sim';
 import type { RunState } from '@chess-battler/sim';
+import { Analytics, deviceId } from './analytics';
 import { BENCH_GAP, BenchView, BoardView } from './board-view';
 import { Game } from './game';
 import { BattlePlayer } from './player';
@@ -51,21 +52,53 @@ async function main(): Promise<void> {
     player.skip();
   });
 
+  // Аналитика: в проде отправляется в Supabase, в dev — только в консоль.
+  const analytics = new Analytics({
+    url: import.meta.env.VITE_SUPABASE_URL,
+    key: import.meta.env.VITE_SUPABASE_KEY,
+    enabled: import.meta.env.PROD || import.meta.env.VITE_ANALYTICS_DEV === '1',
+    deviceId: deviceId(),
+    appVersion: (import.meta.env.VITE_APP_VERSION ?? 'dev').slice(0, 12),
+  });
+  analytics.autoFlush();
+  const runId = (s: RunState) => s.seed.toString(16);
+
   // Продолжаем сохранённый забег, если он есть.
   const saved = loadRun(RUN_CONFIG);
   const initial: RunState =
     saved ?? createRun(crypto.getRandomValues(new Uint32Array(1))[0]!, RUN_CONFIG);
-  const game = new Game(app, board, bench, player, initial, {
+  const game: Game = new Game(app, board, bench, player, initial, {
     save: saveRun,
-    onRunStart: () => {},
-    onRoundEnd: () => {},
-    onRunEnd: () => {},
+    onRunStart: (s) => analytics.track('run_start', runId(s), { seed: s.seed }),
+    onRoundEnd: (before, after, outcome, ticks) =>
+      analytics.track('round_end', runId(before), {
+        round: before.round,
+        result: outcome,
+        // Время подготовки раунда: от начала раунда до нажатия «В бой».
+        duration_ms: game.roundElapsedMs(),
+        battle_ticks: ticks,
+        wins: after.wins,
+        lives: after.lives,
+      }),
+    onRunEnd: (s) => {
+      analytics.track('run_end', runId(s), {
+        result: s.status,
+        wins: s.wins,
+        losses: s.losses,
+        rounds: s.history.length,
+      });
+      void analytics.flush();
+    },
   });
-  if (!saved) saveRun(initial);
+  if (!saved) {
+    saveRun(initial);
+    analytics.track('run_start', runId(initial), { seed: initial.seed });
+  }
   game.start();
 
   // Отладочный доступ в dev-сборке: ручная прокрутка тикера, замеры темпа.
-  if (import.meta.env.DEV) Object.assign(window, { __debug: { app, player, game, board, bench } });
+  if (import.meta.env.DEV)
+    Object.assign(window, { __debug: { app, player, game, board, bench, analytics } });
 }
 
 void main();
