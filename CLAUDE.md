@@ -170,6 +170,20 @@ pnpm supabase:stop    # остановить (данные сохраняютс�
   redirect URI локально — `http://127.0.0.1:54321/auth/v1/callback`). Apple — заготовка.
 - Звук — синтез WebAudio (`sfx.ts`, без ассетов), вибрация — `navigator.vibrate`; музыки пока нет.
 
+## Покупки (подэтап D)
+
+- Только косметика: скины доски, рамки своих фигур, эффекта толчка (`packages/content/src/cosmetics.ts`).
+  Меняют лишь отрисовку (`board.applySkin`, `setPlayerFrame`, `setPushFx`) — sim их не видит.
+- Сервер — источник правды: `products` (тест сверяет с каталогом content), `purchases`
+  (клиент только читает свои; записывает сервер после проверки платежа, повтор платежа
+  отсекает `unique (provider, provider_charge_id)`), `profiles.equipped` — триггер не даёт
+  надеть некупленное. Удаление аккаунта удаляет и покупки (каскад).
+- `PaymentProvider` (`apps/client/src/payments/provider.ts`): Telegram Stars (клиент:
+  `stars-invoice` → `WebApp.openInvoice`; серверная часть — подэтап E), тестовая оплата
+  `DevProvider` (только dev + Edge Function `dev-purchase`, секрет `ALLOW_DEV_PURCHASES`
+  задан лишь в локальном `config.toml`), App Store / Google Play / Stripe — заглушки.
+  Выбирается первый доступный (`pickProvider`).
+
 ## Клиент: проигрывание боя
 
 - Лог режется на такты и действия (`timeline.ts`). Действия такта идут каскадом

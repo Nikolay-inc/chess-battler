@@ -100,12 +100,10 @@ export class StoreScreen {
     const card = el('div', 'store-card');
     const owned = this.purchases.owns(c.id);
     const equipped = this.purchases.equipped[c.kind] === c.id;
-    const price = c.priceXtr === 0 ? t('store.free') : `⭐ ${c.priceXtr}`;
-    card.append(
-      preview(c),
-      el('strong', '', cosmeticName(c.id)),
-      el('span', 'muted', owned ? t('store.owned') : price),
-    );
+    // Стандартные — «Бесплатно», купленные — «Куплено», остальные — цена.
+    const label =
+      c.priceXtr === 0 ? t('store.free') : owned ? t('store.owned') : `⭐ ${c.priceXtr}`;
+    card.append(preview(c), el('strong', '', cosmeticName(c.id)), el('span', 'muted', label));
 
     const btn = el('button', equipped ? 'secondary' : owned ? 'secondary' : 'fight');
     btn.type = 'button';
