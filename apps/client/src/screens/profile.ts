@@ -68,9 +68,11 @@ export class ProfileScreen {
     const who = el('div', 'profile-who');
     const status = s.anonymous
       ? t('profile.notLinked')
-      : s.providers.includes('google') && !s.email
-        ? t('profile.linkedGoogle')
-        : t('profile.linkedEmail', { email: s.email ?? '' });
+      : s.providers.includes('telegram')
+        ? t('profile.linkedTelegram')
+        : s.providers.includes('google') && !s.email
+          ? t('profile.linkedGoogle')
+          : t('profile.linkedEmail', { email: s.email ?? '' });
     who.append(
       el('strong', 'profile-name', p.nickname ?? t('profile.guest')),
       el('span', 'muted', status),
@@ -216,7 +218,9 @@ export class ProfileScreen {
         toast(r.ok ? t('profile.deleted') : t('profile.error', { error: r.error }));
       });
     });
-    box.append(out, del);
+    // Аккаунт Telegram входит сам при каждом запуске — «Выйти» не имеет смысла.
+    if (s.providers.includes('telegram')) box.append(del);
+    else box.append(out, del);
     return [box];
   }
 

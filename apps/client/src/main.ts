@@ -35,7 +35,8 @@ import { SettingsStore } from './settings';
 import { loadRun, saveRun } from './storage';
 import { $, hideInfo } from './ui';
 import { version } from '../package.json';
-import { applyTokens, px } from './theme/tokens';
+import { applyTokens, px, setColorOverrides } from './theme/tokens';
+import { loadTelegram, setupTelegram, themeOverrides } from './telegram';
 import './style.css';
 
 const SPEEDS = [1, 2, 4];
@@ -51,7 +52,25 @@ function telegramLanguage(): string | undefined {
 }
 
 async function main(): Promise<void> {
+  // Внутри Telegram: SDK до токенов и роутера (он читает параметры запуска из hash).
+  const tg = await loadTelegram();
+  if (tg) {
+    setupTelegram(tg);
+    setColorOverrides(themeOverrides(tg.themeParams));
+    tg.onEvent('themeChanged', () => {
+      setColorOverrides(themeOverrides(tg.themeParams));
+      applyTokens();
+    });
+  }
   applyTokens();
+  if (tg) {
+    tg.setHeaderColor?.(
+      getComputedStyle(document.documentElement).getPropertyValue('--color-bg').trim(),
+    );
+    tg.setBackgroundColor?.(
+      getComputedStyle(document.documentElement).getPropertyValue('--color-bg').trim(),
+    );
+  }
   // Язык: выбранный в настройках, иначе Telegram → браузер → английский.
   const settings = new SettingsStore();
   const resolveLocale = (chosen: Locale | null): Locale =>
@@ -128,10 +147,22 @@ async function main(): Promise<void> {
     // Без hash-маршрута: Supabase дописывает токены в hash, второй «#» их ломает.
     // После входа (см. ниже) открываем профиль и убираем ?auth=callback из адреса.
     redirectTo: `${location.origin}${location.pathname}?auth=callback`,
+    telegram:
+      tg && tg.initDataUnsafe.user
+        ? { initData: tg.initData, userId: tg.initDataUnsafe.user.id }
+        : null,
   });
   const profiles = new ProfileStore(account, settings);
   const sfx = new Sfx(settings);
   player.sound = (s) => sfx.play(s);
+  if (tg?.HapticFeedback) {
+    const h = tg.HapticFeedback;
+    sfx.haptic = (s) => {
+      if (s === 'win') h.notificationOccurred('success');
+      else if (s === 'loss') h.notificationOccurred('error');
+      else h.impactOccurred(s === 'death' ? 'heavy' : 'light');
+    };
+  }
 
   // ---------- Покупки (косметика) ----------
   const purchases = new PurchasesStore(account);
@@ -274,6 +305,11 @@ async function main(): Promise<void> {
   };
   router.onChange((route) => {
     document.body.dataset.route = route;
+    // Кнопка «Назад» Telegram — везде, кроме главной.
+    if (tg) {
+      if (route === 'home') tg.BackButton.hide();
+      else tg.BackButton.show();
+    }
     hideInfo($('info'));
     for (const tab of document.querySelectorAll<HTMLElement>('.tab')) {
       if (tab.dataset.route === route) tab.setAttribute('aria-current', 'page');
@@ -282,6 +318,9 @@ async function main(): Promise<void> {
     show[route]();
   });
   $('play-back').addEventListener('click', () => router.go('home'));
+  tg?.BackButton.onClick(() => {
+    if (document.body.dataset.phase !== 'battle') router.go('home');
+  });
 
   // Смена языка: перерисовать текущий экран, забег и надписи на доске.
   let shownLocale = settings.current.locale;

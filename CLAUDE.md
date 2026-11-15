@@ -58,6 +58,7 @@ pnpm balance      # 10 000 боёв «бот против бота» (--battles 
 ```bash
 pnpm supabase:start   # поднять стек и применить supabase/migrations
 pnpm supabase:stop    # остановить (данные сохраняются)
+pnpm tg:dev           # Telegram Mini App на локальном стеке через туннели cloudflared
 ```
 
 `pnpm dev` ходит в локальный стек (`apps/client/.env.development`), прод-сборка — в облако
@@ -179,10 +180,37 @@ pnpm supabase:stop    # остановить (данные сохраняютс�
   отсекает `unique (provider, provider_charge_id)`), `profiles.equipped` — триггер не даёт
   надеть некупленное. Удаление аккаунта удаляет и покупки (каскад).
 - `PaymentProvider` (`apps/client/src/payments/provider.ts`): Telegram Stars (клиент:
-  `stars-invoice` → `WebApp.openInvoice`; серверная часть — подэтап E), тестовая оплата
+  `stars-invoice` → `WebApp.openInvoice`; сервер — см. «Telegram Mini App»), тестовая оплата
   `DevProvider` (только dev + Edge Function `dev-purchase`, секрет `ALLOW_DEV_PURCHASES`
   задан лишь в локальном `config.toml`), App Store / Google Play / Stripe — заглушки.
   Выбирается первый доступный (`pickProvider`).
+
+## Telegram Mini App (подэтап E)
+
+- Клиент (`apps/client/src/telegram.ts`): SDK `telegram-web-app.js` грузится, только если
+  в адресе есть параметры запуска `tgWebApp*`. Внутри Telegram: `ready`/`expand`,
+  `disableVerticalSwipes`, тема Telegram поверх токенов (`setColorOverrides`, `themeChanged`),
+  `BackButton` вне главной (в бою не срабатывает), вибрация через `HapticFeedback`,
+  отступы — `--tg-safe-area-inset-*` / `--tg-content-safe-area-inset-*` (переменные SDK,
+  тест стилей их разрешает).
+- Вход: `telegram-auth` проверяет подпись initData (HMAC, ключ `HMAC("WebAppData", токен)`)
+  и `auth_date` (≤ суток), находит пользователя по `telegram_accounts`; если связи нет и
+  вызывающий — гость, **гость становится аккаунтом Telegram с тем же id** (прогресс цел),
+  иначе создаётся новый. Email технический (`tg-<id>@telegram.invalid`); клиент получает
+  сессию через `verifyOtp(token_hash)`. Признак аккаунта Telegram — `user_metadata.telegram_id`
+  (`app_metadata.provider` Auth перезаписывает на `email`). «Выйти» для такого аккаунта скрыт.
+- Stars: `stars-invoice` (JWT, товар из `products`, не куплен ли) → `createInvoiceLink` в XTR
+  (`provider_token: ''`); `telegram-webhook` (заголовок `X-Telegram-Bot-Api-Secret-Token`):
+  `pre_checkout_query` — сверка товара, цены, валюты; `successful_payment` — запись в
+  `purchases` (`telegram_payment_charge_id`, повтор отсекает unique); `/start` — кнопка Mini App.
+- Секреты (`supabase/.env`, в git не попадает; `supabase start` подставляет их в
+  `[edge_runtime.secrets]`): `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` (генерирует
+  `tg:dev`). `TELEGRAM_TEST_ENV=1` — тестовое окружение Telegram (Bot API `/bot<token>/test/…`).
+  Токен добавлен после старта стека → `pnpm supabase:stop && pnpm supabase:start`.
+- `pnpm tg:dev` (`scripts/tg-dev.mjs`): туннели к Supabase и к Vite (порт 5174, `TG_DEV_PORT`),
+  `setWebhook` + кнопка меню «Play», Vite с `VITE_SUPABASE_URL` = туннель. Ctrl+C гасит всё.
+  `supabase functions serve` не использовать при поднятом стеке: при выходе он удаляет
+  контейнер функций стека (до перезапуска стека функции отвечают 503).
 
 ## Клиент: проигрывание боя
 

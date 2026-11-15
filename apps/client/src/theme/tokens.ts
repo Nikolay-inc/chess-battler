@@ -80,8 +80,19 @@ export const tokens = {
 
 export type ColorToken = keyof typeof tokens.color;
 
+/** Переопределения цветов во время работы (например, тема Telegram). */
+const overrides: Partial<Record<ColorToken, string>> = {};
+
+/** Текущее значение цвета с учётом переопределений. */
+export const color = (name: ColorToken): string => overrides[name] ?? tokens.color[name];
+
 /** Цвет токена для Pixi (0xRRGGBB). */
-export const px = (name: ColorToken): number => parseInt(tokens.color[name].slice(1), 16);
+export const px = (name: ColorToken): number => parseInt(color(name).slice(1), 16);
+
+/** Задать переопределения цветов (вызывать до applyTokens и до создания Pixi). */
+export function setColorOverrides(o: Partial<Record<ColorToken, string>>): void {
+  Object.assign(overrides, o);
+}
 
 const kebab = (s: string) => s.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
 
@@ -93,7 +104,8 @@ const rgbChannels = (hex: string): string => {
 /** CSS-переменные из токенов: имя → значение. */
 export function cssVariables(): Record<string, string> {
   const vars: Record<string, string> = {};
-  for (const [k, v] of Object.entries(tokens.color)) {
+  for (const k of Object.keys(tokens.color) as ColorToken[]) {
+    const v = color(k);
     vars[`--color-${kebab(k)}`] = v;
     vars[`--color-${kebab(k)}-rgb`] = rgbChannels(v);
   }
@@ -111,5 +123,5 @@ export function cssVariables(): Record<string, string> {
 /** Записать токены в CSS-переменные корня документа (до первой отрисовки). */
 export function applyTokens(root: HTMLElement = document.documentElement): void {
   for (const [k, v] of Object.entries(cssVariables())) root.style.setProperty(k, v);
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', tokens.color.bg);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', color('bg'));
 }

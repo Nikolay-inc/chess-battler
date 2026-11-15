@@ -11,7 +11,7 @@ import type { SupabaseClient, User } from '@supabase/supabase-js';
  * игра работает локально.
  */
 export type AccountStatus = 'disabled' | 'loading' | 'ready' | 'offline';
-export type Provider = 'email' | 'google' | 'apple';
+export type Provider = 'email' | 'google' | 'apple' | 'telegram';
 
 export interface AccountState {
   readonly status: AccountStatus;
@@ -30,6 +30,8 @@ export interface AccountOptions {
   readonly enabled: boolean;
   /** Куда вернуть пользователя после magic link / OAuth. */
   readonly redirectTo: string;
+  /** initData Telegram Mini App — если игра открыта в Telegram, входим через него. */
+  readonly telegram?: { readonly initData: string; readonly userId: number } | null;
 }
 
 const INITIAL: AccountState = {
@@ -43,14 +45,17 @@ const INITIAL: AccountState = {
 /** Состояние из пользователя Supabase. */
 export function stateFromUser(user: User | null, status: AccountStatus): AccountState {
   if (!user) return { ...INITIAL, status };
+  const telegram = user.app_metadata?.provider === 'telegram' || !!user.user_metadata?.telegram_id;
   const providers = (user.identities ?? [])
     .map((i) => i.provider)
-    .filter((p): p is Provider => p === 'email' || p === 'google' || p === 'apple');
+    // Технический email аккаунта Telegram — не способ входа для игрока.
+    .filter((p): p is Provider => (p === 'email' && !telegram) || p === 'google' || p === 'apple');
+  if (telegram) providers.unshift('telegram');
   return {
     status,
     userId: user.id,
     anonymous: user.is_anonymous ?? providers.length === 0,
-    email: user.email ?? null,
+    email: telegram ? null : (user.email ?? null),
     providers: [...new Set(providers)],
   };
 }
@@ -99,6 +104,7 @@ export class Account {
     });
     try {
       const { data } = await c.auth.getSession();
+      if (this.opts.telegram && (await this.telegramSignIn(c, data.session?.user ?? null))) return;
       if (data.session?.user) {
         // Обновить данные пользователя (привязки могли измениться на сервере).
         const fresh = await c.auth.getUser();
@@ -109,6 +115,31 @@ export class Account {
     } catch {
       this.set({ ...INITIAL, status: 'offline' });
     }
+  }
+
+  /**
+   * Вход через Telegram: initData проверяет сервер (telegram-auth) и отдаёт одноразовый
+   * token_hash. Гость этого устройства превращается в аккаунт Telegram (прогресс остаётся).
+   * false — не получилось, продолжаем обычным путём.
+   */
+  private async telegramSignIn(c: SupabaseClient, current: User | null): Promise<boolean> {
+    const tg = this.opts.telegram!;
+    if (current && Number(current.user_metadata?.telegram_id) === tg.userId) {
+      this.set(stateFromUser(current, 'ready'));
+      return true;
+    }
+    const { data, error } = await c.functions.invoke('telegram-auth', {
+      body: { initData: tg.initData },
+    });
+    const tokenHash = (data as { token_hash?: string } | null)?.token_hash;
+    if (error || !tokenHash) return false;
+    const { data: session, error: otpError } = await c.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: 'magiclink',
+    });
+    if (otpError || !session.user) return false;
+    this.set(stateFromUser(session.user, 'ready'));
+    return true;
   }
 
   private async guest(): Promise<void> {

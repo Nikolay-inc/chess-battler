@@ -246,7 +246,8 @@
     "loading": "Loading…",
     "bestWon": "Cleared",
     "resultWon": "Cleared",
-    "resultLost": "Wins: {wins}"
+    "resultLost": "Wins: {wins}",
+    "linkedTelegram": "Telegram account"
   },
   "settings": {
     "title": "Settings",

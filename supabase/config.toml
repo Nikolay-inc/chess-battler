@@ -162,7 +162,7 @@ site_url = "http://localhost:5180"
 # The public URL that Auth serves on. Defaults to the API external URL with `/auth/v1` appended.
 # external_url = ""
 # A list of *exact* URLs that auth providers are permitted to redirect to post authentication.
-additional_redirect_urls = ["http://localhost:5180", "http://localhost:5180/**", "http://127.0.0.1:5180/**"]
+additional_redirect_urls = ["http://localhost:5173/**", "http://127.0.0.1:5173/**", "http://localhost:5180", "http://localhost:5180/**", "http://127.0.0.1:5180/**"]
 # How long tokens are valid for, in seconds. Defaults to 3600 (1 hour), maximum 604,800 (1 week).
 jwt_expiry = 3600
 # JWT issuer URL. If not set, defaults to auth.external_url.
@@ -407,6 +407,11 @@ deno_version = 2
 [edge_runtime.secrets]
 # Тестовая оплата (functions/dev-purchase). В облаке не задавать!
 ALLOW_DEV_PURCHASES = "1"
+# Telegram (подэтап E): токен бота и секрет вебхука — из supabase/.env (не в git).
+TELEGRAM_BOT_TOKEN = "env(TELEGRAM_BOT_TOKEN)"
+TELEGRAM_WEBHOOK_SECRET = "env(TELEGRAM_WEBHOOK_SECRET)"
+# Бот из тестового окружения Telegram (Bot API: /bot<token>/test/<method>).
+TELEGRAM_TEST_ENV = "1"
 
 [analytics]
 enabled = false
@@ -435,3 +440,11 @@ enabled = true
 # formatted with uppercase keywords, indent 2, max width 180, trailing commas,
 # and column/key alignment. Set to "null" to emit raw, unformatted SQL.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":180,\"commaStyle\":\"trailing\"}"
+
+# Вход по initData и вебхук бота проверяют подлинность сами (подпись Telegram / секрет вебхука):
+# JWT на шлюзе им не нужен — Telegram его не присылает, а при первом входе сессии ещё нет.
+[functions.telegram-auth]
+verify_jwt = false
+
+[functions.telegram-webhook]
+verify_jwt = false

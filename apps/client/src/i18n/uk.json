@@ -262,7 +262,8 @@
     "loading": "Завантаження…",
     "bestWon": "Пройдено",
     "resultWon": "Пройдено",
-    "resultLost": "Перемог: {wins}"
+    "resultLost": "Перемог: {wins}",
+    "linkedTelegram": "Акаунт Telegram"
   },
   "settings": {
     "title": "Налаштування",

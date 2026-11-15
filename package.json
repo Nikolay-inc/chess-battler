@@ -18,10 +18,12 @@
     "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "balance": "pnpm --filter @chess-battler/bots balance --",
     "supabase:start": "supabase start -x studio,imgproxy,storage-api,realtime,logflare,vector,supavisor,postgres-meta",
-    "supabase:stop": "supabase stop"
+    "supabase:stop": "supabase stop",
+    "tg:dev": "node scripts/tg-dev.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "cloudflared": "^0.7.3",
     "eslint": "^9.39.5",
     "globals": "^16",
     "prettier": "^3.10.1",

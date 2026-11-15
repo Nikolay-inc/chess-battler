@@ -47,8 +47,13 @@ const VIBRATION: Partial<Record<Sound, number | number[]>> = {
  * Звук и вибрация с учётом настроек. AudioContext создаётся по первому жесту
  * пользователя (требование браузеров). Музыки пока нет — переключатель только хранится.
  */
+/** Вибрация платформы (Telegram HapticFeedback); null — navigator.vibrate. */
+export type Haptic = (sound: Sound) => void;
+
 export class Sfx {
   private ctx: AudioContext | null = null;
+  /** Задаётся в Telegram: HapticFeedback вместо navigator.vibrate (на iOS иначе вибрации нет). */
+  haptic: Haptic | null = null;
 
   constructor(private readonly settings: SettingsStore) {
     const unlock = () => {
@@ -60,8 +65,9 @@ export class Sfx {
 
   play(sound: Sound): void {
     const s = this.settings.current;
-    if (s.vibration && VIBRATION[sound] && typeof navigator.vibrate === 'function') {
-      navigator.vibrate(VIBRATION[sound]!);
+    if (s.vibration && VIBRATION[sound]) {
+      if (this.haptic) this.haptic(sound);
+      else if (typeof navigator.vibrate === 'function') navigator.vibrate(VIBRATION[sound]!);
     }
     const ctx = this.ctx;
     if (!s.sound || !ctx || ctx.state !== 'running') return;
