@@ -99,10 +99,10 @@ button:disabled {
 }
 
 .fight {
+  flex: 1;
   background: var(--accent);
   color: #1b1b1b;
   font-weight: 700;
-  min-width: 96px;
 }
 
 .speed {

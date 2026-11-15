@@ -38,6 +38,7 @@ async function main(): Promise<void> {
   const resultEl = $('result');
   const fightBtn = $<HTMLButtonElement>('fight');
   const speedBtn = $<HTMLButtonElement>('speed');
+  const skipBtn = $<HTMLButtonElement>('skip');
   $('army-a').textContent = DEMO_ARMY_A.name;
   $('army-b').textContent = DEMO_ARMY_B.name;
 
@@ -70,11 +71,23 @@ async function main(): Promise<void> {
     speedBtn.textContent = `×${SPEEDS[speedIdx]}`;
   });
 
+  // Отладочный доступ в dev-сборке: ручная прокрутка тикера, замеры темпа.
+  if (import.meta.env.DEV) Object.assign(window, { __debug: { app, player, result } });
+
+  skipBtn.addEventListener('click', () => {
+    skipBtn.disabled = true;
+    player.skip();
+  });
+
   fightBtn.addEventListener('click', async () => {
     fightBtn.disabled = true;
+    skipBtn.disabled = false;
     resultEl.hidden = true;
+    const started = performance.now();
     await player.play(result);
+    console.info(`[battle] проигран за ${((performance.now() - started) / 1000).toFixed(1)} с`);
     showResult(result);
+    skipBtn.disabled = true;
     fightBtn.textContent = 'Ещё раз';
     fightBtn.disabled = false;
   });

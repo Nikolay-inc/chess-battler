@@ -16,6 +16,15 @@ const GLYPH: Record<Family, string> = {
 export class UnitView extends Container {
   private readonly hpBar = new Graphics();
   hp: number;
+  /** Логическая клетка фигуры (обновляется проигрывателем по событиям). */
+  cell: Vec;
+  /** Экранная позиция клетки, вокруг которой живут временные смещения. */
+  readonly base = { x: 0, y: 0 };
+  /** Смещения выпада и тряски — независимы, чтобы перекрывающиеся анимации не конфликтовали. */
+  readonly lunge = { x: 0, y: 0 };
+  readonly shake = { x: 0, y: 0 };
+  /** Номер текущего сдвига: новый сдвиг отменяет предыдущий (каскад может их перекрыть). */
+  slideToken = 0;
 
   constructor(
     readonly snap: UnitSnapshot,
@@ -45,7 +54,17 @@ export class UnitView extends Container {
     this.hpBar.y = r + 4;
     this.addChild(body, glyph, label, this.hpBar);
     this.hp = snap.hp;
+    this.cell = snap.pos;
     this.drawHp();
+  }
+
+  /** Применяет base + смещения к позиции. */
+  sync(): void {
+    if (this.destroyed) return;
+    this.position.set(
+      this.base.x + this.lunge.x + this.shake.x,
+      this.base.y + this.lunge.y + this.shake.y,
+    );
   }
 
   setHp(hp: number): void {
@@ -115,7 +134,9 @@ export class BoardView extends Container {
       if (s.hp <= 0) continue;
       const v = new UnitView(s, s.maxHp);
       const p = this.toScreen(s.pos);
-      v.position.set(p.x, p.y);
+      v.base.x = p.x;
+      v.base.y = p.y;
+      v.sync();
       this.units.set(s.id, v);
       this.unitLayer.addChild(v);
     }

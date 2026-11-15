@@ -6,6 +6,9 @@ export const easeInOutQuad = (t: number): number =>
 
 /** Простой твин на тикере Pixi. speed() читается каждый кадр — скорость можно менять на лету. */
 export class Tweener {
+  /** true — все твины завершаются на следующем кадре («Пропустить»). */
+  fastForward = false;
+
   constructor(
     private readonly ticker: Ticker,
     private readonly speed: () => number,
@@ -15,8 +18,8 @@ export class Tweener {
     return new Promise((resolve) => {
       let elapsed = 0;
       const step = (ticker: Ticker) => {
-        elapsed += ticker.deltaMS * this.speed();
-        const t = Math.min(1, elapsed / ms);
+        elapsed += this.fastForward ? ms : ticker.deltaMS * this.speed();
+        const t = ms <= 0 ? 1 : Math.min(1, elapsed / ms);
         update(t);
         if (t >= 1) {
           this.ticker.remove(step);
