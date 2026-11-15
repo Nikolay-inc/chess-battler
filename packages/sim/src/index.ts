@@ -6,3 +6,4 @@ export * from './abilities';
 export * from './rng';
 export { simulate } from './simulate';
 export * from './analyze';
+export * from './run';
