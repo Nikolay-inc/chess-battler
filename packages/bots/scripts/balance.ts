@@ -50,6 +50,7 @@ const sides: Record<Side, Tally> = { A: tally(), B: tally() };
 let ticks = 0;
 let timeouts = 0;
 let timeoutDraws = 0;
+let reachedStorm = 0;
 let withCollision = 0;
 const tickHist = new Map<number, number>();
 
@@ -74,6 +75,7 @@ for (let i = 0; i < BATTLES; i++) {
     if (r.winner === null) timeoutDraws++;
   }
   if (r.events.some((e) => e.type === 'collision')) withCollision++;
+  if (r.events.some((e) => e.type === 'storm')) reachedStorm++;
 
   for (const side of ['A', 'B'] as const) {
     const outcome = r.winner === null ? 'draw' : r.winner === side ? 'win' : 'loss';
@@ -91,6 +93,7 @@ for (let i = 0; i < BATTLES; i++) {
 const seconds = (performance.now() - started) / 1000;
 const avgTicks = ticks / BATTLES;
 const timeoutDrawShare = timeoutDraws / BATTLES;
+const timeoutShare = timeouts / BATTLES;
 const collisionShare = withCollision / BATTLES;
 
 // ---------- Отчёт ----------
@@ -125,8 +128,12 @@ console.log('\nБои');
 console.log(
   `  ${ok(avgTicks >= 10 && avgTicks <= 20)} средняя длина: ${avgTicks.toFixed(1)} такта (цель 10–20)`,
 );
+console.log(`  ${ok(timeoutShare < 0.1)} доля боёв до таймаута: ${pct(timeoutShare)} (цель < 10%)`);
 console.log(
-  `  ${ok(timeoutDrawShare < 0.1)} ничьи по таймауту: ${pct(timeoutDrawShare)} (цель < 10%); всего таймаутов ${pct(timeouts / BATTLES)}`,
+  `  ${ok(timeoutDrawShare < 0.1)} ничьи по таймауту: ${pct(timeoutDrawShare)} (цель < 10%)`,
+);
+console.log(
+  `     бои, дошедшие до Бури (такт ${DEFAULT_RULES.storm?.startTick ?? '—'}+): ${pct(reachedStorm / BATTLES)}`,
 );
 console.log(
   `  ${ok(collisionShare > 0.6)} бои со столкновением: ${pct(collisionShare)} (цель > 60%)`,
@@ -163,6 +170,8 @@ if (JSON_OUT) {
     ),
     avgTicks,
     timeoutDrawShare,
+    timeoutShare,
+    stormShare: reachedStorm / BATTLES,
     collisionShare,
     sides: { A: rate(sides.A), B: rate(sides.B) },
     config: { lives: RUN_CONFIG.lives, collisionDamage: DEFAULT_RULES.collisionDamage },
