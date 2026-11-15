@@ -9,6 +9,7 @@ import { BattlePlayer } from './player';
 import { Tweener } from './tween';
 import { loadRun, saveRun } from './storage';
 import { $ } from './ui';
+import { version } from '../package.json';
 import './style.css';
 
 const SPEEDS = [1, 2, 4];
@@ -65,13 +66,18 @@ async function main(): Promise<void> {
     player.skip();
   });
 
+  // Версия: номер из package.json + короткий хэш коммита сборки (в dev — «dev»).
+  const build = (import.meta.env.VITE_APP_VERSION ?? 'dev').slice(0, 7);
+  const appVersion = `${version}+${build}`;
+  $('version').textContent = `v${version} · ${build}`;
+
   // Аналитика: в проде отправляется в Supabase, в dev — только в консоль.
   const analytics = new Analytics({
     url: import.meta.env.VITE_SUPABASE_URL,
     key: import.meta.env.VITE_SUPABASE_KEY,
     enabled: import.meta.env.PROD || import.meta.env.VITE_ANALYTICS_DEV === '1',
     deviceId: deviceId(),
-    appVersion: (import.meta.env.VITE_APP_VERSION ?? 'dev').slice(0, 12),
+    appVersion,
   });
   analytics.autoFlush();
   const runId = (s: RunState) => s.seed.toString(16);

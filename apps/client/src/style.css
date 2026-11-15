@@ -624,3 +624,16 @@ body:has(#result:not([hidden])) .coach {
     animation: none;
   }
 }
+
+/* Версия сборки — в нижней полосе отступа, не мешает кнопкам. */
+.version {
+  position: fixed;
+  right: 8px;
+  bottom: max(1px, env(safe-area-inset-bottom));
+  font-size: 10px;
+  line-height: 11px;
+  color: var(--muted);
+  opacity: 0.6;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
