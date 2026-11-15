@@ -9,6 +9,8 @@ import type {
   UnitDef,
 } from '@chess-battler/sim';
 import { GLYPH } from './board-view';
+import { patternPreview } from './pattern-preview';
+import type { PreviewCell } from './pattern-preview';
 
 export const $ = <T extends HTMLElement = HTMLElement>(id: string) =>
   document.getElementById(id) as T;
@@ -73,7 +75,7 @@ export function renderSynergies(
 
 // ---------- Магазин ----------
 
-export function renderShop(root: HTMLElement, s: RunState, onBuy: (slot: number) => void): void {
+export function renderShop(root: HTMLElement, s: RunState, onTap: (slot: number) => void): void {
   root.replaceChildren();
   root.classList.toggle('frozen', s.frozen);
   s.shop.forEach((id, slot) => {
@@ -83,28 +85,59 @@ export function renderShop(root: HTMLElement, s: RunState, onBuy: (slot: number)
     }
     const def = getUnit(id);
     const cost = unitCost(def);
-    const card = el('button', `shop-card fam-${def.family}`);
+    const card = el('button', `shop-card fam-${def.family}${cost > s.gold ? ' poor' : ''}`);
     card.type = 'button';
-    card.disabled = cost > s.gold;
-    card.setAttribute('aria-label', `Купить ${def.name} за ${cost}`);
+    card.dataset.slot = String(slot);
+    card.setAttribute('aria-label', `${def.name}, цена ${cost}`);
     card.append(
       el('span', 'card-glyph', GLYPH[def.family]),
       el('span', 'card-name', def.name),
       el('span', 'card-stats', `${def.hp}♥ ${def.atk}⚔️`),
       el('span', 'card-cost', `${cost}`),
     );
-    card.addEventListener('click', () => onBuy(slot));
+    card.addEventListener('click', () => onTap(slot));
     root.append(card);
   });
 }
 
-// ---------- Панель информации ----------
+// ---------- Карточка фигуры ----------
 
-export function showUnitInfo(
+const CELL_LABEL: Record<PreviewCell, string> = {
+  self: 'фигура',
+  move: 'ход',
+  attack: 'удар',
+  both: 'ход и удар',
+  empty: '',
+};
+
+/** Мини-схема 5×5: куда фигура ходит (точки) и куда бьёт (красные клетки). */
+function patternGrid(def: UnitDef): HTMLElement {
+  const grid = el('div', 'pattern');
+  grid.setAttribute('role', 'img');
+  grid.setAttribute('aria-label', `Схема хода и атаки: ${PATTERN_TEXT[def.family]}`);
+  for (const row of patternPreview(def)) {
+    for (const cell of row) {
+      const c = el('span', `pc pc-${cell}`, cell === 'self' ? GLYPH[def.family] : '');
+      if (cell !== 'empty') c.title = CELL_LABEL[cell];
+      grid.append(c);
+    }
+  }
+  return grid;
+}
+
+export interface UnitCardOptions {
+  /** Сколько вернёт продажа (фигура игрока) или null. */
+  readonly sell?: number | null;
+  /** Покупка из магазина. */
+  readonly buy?: { readonly cost: number; readonly affordable: boolean; onBuy(): void };
+}
+
+/** Карточка фигуры: схема хода и атаки, статы с учётом звёзд, способность. */
+export function showUnitCard(
   root: HTMLElement,
   unitId: string,
   stars: Stars,
-  sell: number | null,
+  opts: UnitCardOptions = {},
 ): void {
   const base = getUnit(unitId);
   const d: UnitDef = starScaledDef(base, stars, DEFAULT_RULES);
@@ -119,6 +152,7 @@ export function showUnitInfo(
   close.setAttribute('aria-label', 'Закрыть');
   close.addEventListener('click', () => hideInfo(root));
   head.append(close);
+
   const stats = el('div', 'info-stats');
   const stat = (k: string, v: number | string) => {
     const s = el('span');
@@ -130,10 +164,28 @@ export function showUnitInfo(
   if (d.armor) stat('броня', d.armor);
   stat('иниц.', d.initiative);
   stat('толчок', d.push);
-  root.append(head, stats, el('p', 'info-text', PATTERN_TEXT[d.family]));
-  if (d.description) root.append(el('p', 'info-text ability', d.description));
-  if (sell !== null)
-    root.append(el('p', 'info-hint', `Перетащите на магазин, чтобы продать: +${sell}`));
+
+  const body = el('div', 'info-body');
+  const text = el('div', 'info-col');
+  text.append(stats, el('p', 'info-text', PATTERN_TEXT[d.family]));
+  if (d.description) text.append(el('p', 'info-text ability', d.description));
+  const legend = el('p', 'pattern-legend');
+  legend.append(el('span', 'lg lg-move'), ' ход  ', el('span', 'lg lg-attack'), ' удар');
+  const schema = el('div', 'info-schema');
+  schema.append(patternGrid(base), legend);
+  body.append(schema, text);
+  root.append(head, body);
+
+  if (opts.buy) {
+    const buy = el('button', 'fight info-buy', `Купить · ${opts.buy.cost}`);
+    buy.type = 'button';
+    buy.disabled = !opts.buy.affordable;
+    if (!opts.buy.affordable) buy.textContent = `Не хватает золота · ${opts.buy.cost}`;
+    buy.addEventListener('click', () => opts.buy!.onBuy());
+    root.append(buy);
+  } else if (opts.sell !== undefined && opts.sell !== null) {
+    root.append(el('p', 'info-hint', `Перетащите на магазин, чтобы продать: +${opts.sell}`));
+  }
   root.hidden = false;
 }
 

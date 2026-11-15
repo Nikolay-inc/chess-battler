@@ -1,4 +1,4 @@
-import { RUN_CONFIG, SYNERGIES } from '@chess-battler/content';
+import { RUN_CONFIG, SYNERGIES, getUnit } from '@chess-battler/content';
 import { generateGhost } from '@chess-battler/bots';
 import {
   DEFAULT_RULES,
@@ -10,6 +10,7 @@ import {
   runArmy,
   sellValue,
   simulate,
+  unitCost,
 } from '@chess-battler/sim';
 import type { Location, OwnedUnit, RoundOutcome, RunAction, RunState } from '@chess-battler/sim';
 import type { BenchView, BoardView } from './board-view';
@@ -24,7 +25,7 @@ import {
   renderShop,
   renderSynergies,
   showSynergyInfo,
-  showUnitInfo,
+  showUnitCard,
   toast,
 } from './ui';
 import type { Application } from 'pixi.js';
@@ -78,12 +79,10 @@ export class Game {
     });
     board.onFocusChange = (v) => {
       if (v)
-        showUnitInfo(
-          $('info'),
-          v.look.defId,
-          v.look.stars,
-          this.inBattle ? null : sellValue(v.look.stars, RUN_CONFIG),
-        );
+        showUnitCard($('info'), v.look.defId, v.look.stars, {
+          sell:
+            this.inBattle || v.side !== PLAYER_SIDE ? null : sellValue(v.look.stars, RUN_CONFIG),
+        });
       else hideInfo($('info'));
     };
 
@@ -139,8 +138,25 @@ export class Game {
       this.board.toggleFocus(u.uid);
     } else {
       this.board.clearFocus();
-      showUnitInfo($('info'), u.unit, u.stars, sellValue(u.stars, RUN_CONFIG));
+      showUnitCard($('info'), u.unit, u.stars, { sell: sellValue(u.stars, RUN_CONFIG) });
     }
+  }
+
+  /** Тап по фигуре в магазине: карточка с кнопкой «Купить». */
+  private openShopCard(slot: number): void {
+    const id = this.state.shop[slot];
+    if (!id) return;
+    this.board.clearFocus();
+    const cost = unitCost(getUnit(id));
+    showUnitCard($('info'), id, 1, {
+      buy: {
+        cost,
+        affordable: this.state.gold >= cost,
+        onBuy: () => {
+          if (this.dispatch({ type: 'buy', slot })) hideInfo($('info'));
+        },
+      },
+    });
   }
 
   private enterPrep(): void {
@@ -160,7 +176,7 @@ export class Game {
       this.board.clearFocus();
       showSynergyInfo($('info'), family, count);
     });
-    renderShop($('shop'), s, (slot) => this.dispatch({ type: 'buy', slot }));
+    renderShop($('shop'), s, (slot) => this.openShopCard(slot));
     $<HTMLButtonElement>('reroll').disabled = s.gold < RUN_CONFIG.rerollCost;
     $('freeze').classList.toggle('on', s.frozen);
     $('freeze').setAttribute('aria-pressed', String(s.frozen));
