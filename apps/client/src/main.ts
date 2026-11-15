@@ -1,9 +1,9 @@
 import { Application } from 'pixi.js';
 import { DEFAULT_RULES, createSetup, simulate } from '@chess-battler/sim';
-import type { BattleResult } from '@chess-battler/sim';
 import { DEMO_ARMY_A, DEMO_ARMY_B, resolveArmy } from '@chess-battler/content';
 import { BoardView } from './board-view';
 import { BattlePlayer } from './player';
+import { renderResult } from './result-view';
 import { Tweener } from './tween';
 import './style.css';
 
@@ -51,21 +51,6 @@ async function main(): Promise<void> {
   const result = simulate(setup, rules);
   board.setUnits(result.initial);
 
-  function showResult(r: BattleResult): void {
-    const title =
-      r.winner === null
-        ? 'Ничья'
-        : `Победа: ${r.winner === 'A' ? DEMO_ARMY_A.name : DEMO_ARMY_B.name}`;
-    const reason =
-      r.reason === 'elimination' ? 'армия противника уничтожена' : 'по HP после 30 тактов';
-    resultEl.innerHTML = '';
-    resultEl.append(title);
-    const small = document.createElement('small');
-    small.textContent = `${reason} · тактов: ${r.ticks}`;
-    resultEl.append(small);
-    resultEl.hidden = false;
-  }
-
   speedBtn.addEventListener('click', () => {
     speedIdx = (speedIdx + 1) % SPEEDS.length;
     speedBtn.textContent = `×${SPEEDS[speedIdx]}`;
@@ -79,18 +64,22 @@ async function main(): Promise<void> {
     player.skip();
   });
 
-  fightBtn.addEventListener('click', async () => {
+  async function fight(): Promise<void> {
     fightBtn.disabled = true;
     skipBtn.disabled = false;
     resultEl.hidden = true;
-    const started = performance.now();
+    board.clearFocus();
     await player.play(result);
-    console.info(`[battle] проигран за ${((performance.now() - started) / 1000).toFixed(1)} с`);
-    showResult(result);
     skipBtn.disabled = true;
     fightBtn.textContent = 'Ещё раз';
     fightBtn.disabled = false;
-  });
+    renderResult(resultEl, result, {
+      onReplay: () => void fight(),
+      onClose: () => (resultEl.hidden = true),
+    });
+  }
+
+  fightBtn.addEventListener('click', () => void fight());
 }
 
 void main();
