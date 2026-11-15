@@ -150,7 +150,7 @@ export class BoardView extends Container {
   readonly highlight = new Graphics();
   readonly unitLayer = new Container();
   readonly fxLayer = new Container();
-  private readonly enemyVeil = new Graphics();
+  private readonly enemyVeil = new Container();
   /** Фигура, для которой показаны клетки хода и атаки. */
   private focused: number | null = null;
   /** true — выбрана тапом (не сбрасывается при уходе курсора). */
@@ -179,7 +179,7 @@ export class BoardView extends Container {
     grid.on('pointertap', () => this.clearFocus());
 
     // Затемнение половины соперника во время подготовки.
-    this.enemyVeil
+    const veil = new Graphics()
       .rect(PAD, PAD, this.cols * CELL, (this.rows / 2) * CELL)
       .fill({ color: 0x14161c, alpha: 0.55 });
     const veilText = new Text({
@@ -188,7 +188,8 @@ export class BoardView extends Container {
     });
     veilText.anchor.set(0.5);
     veilText.position.set(this.pixelWidth / 2, PAD + (this.rows / 4) * CELL);
-    this.enemyVeil.addChild(veilText);
+    // В Pixi v8 детей могут иметь только Container, не Graphics.
+    this.enemyVeil.addChild(veil, veilText);
     this.enemyVeil.visible = false;
 
     this.addChild(grid, this.enemyVeil, this.highlight, this.unitLayer, this.fxLayer);
