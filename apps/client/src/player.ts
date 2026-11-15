@@ -6,6 +6,7 @@ import { PACING, groupByTick, involvedUnits, staggerMs } from './timeline';
 import type { ActionGroup } from './timeline';
 import type { Tweener } from './tween';
 import { easeInOutQuad, easeOutCubic } from './tween';
+import { px, tokens } from './theme/tokens';
 
 /** Состояние анимации одного действия. */
 interface ActionContext {
@@ -16,16 +17,16 @@ interface ActionContext {
 }
 
 const COLOR = {
-  arrow: 0xfff1a8,
-  chain: 0xffa53a,
-  heal: 0x5ad17a,
-  shield: 0x7fd8ff,
-  buff: 0xf2c14e,
-  stun: 0xd7b8ff,
-  curse: 0xc07bff,
-  promote: 0xf2c14e,
-  thorns: 0xff8a65,
-  storm: 0xb57bff,
+  arrow: px('fxSpark'),
+  chain: px('fxCollision'),
+  heal: px('success'),
+  shield: px('info'),
+  buff: px('accent'),
+  stun: px('fxStun'),
+  curse: px('fxCurse'),
+  promote: px('accent'),
+  thorns: px('fxThorns'),
+  storm: px('fxStorm'),
 } as const;
 
 const BUFF_LABEL: Record<BuffStat, string> = {
@@ -252,9 +253,9 @@ export class BattlePlayer {
   private async telegraph(target: UnitView): Promise<void> {
     const ring = new Graphics()
       .circle(0, 0, CELL * 0.44)
-      .stroke({ color: 0xff3b3b, width: 4 })
+      .stroke({ color: px('fxTelegraph'), width: 4 })
       .circle(0, 0, CELL * 0.44)
-      .fill({ color: 0xff3b3b, alpha: 0.18 });
+      .fill({ color: px('fxTelegraph'), alpha: 0.18 });
     ring.position.set(target.base.x, target.base.y);
     this.board.fxLayer.addChild(ring);
     await this.tw.run(MS.telegraph, (t) => {
@@ -269,11 +270,11 @@ export class BattlePlayer {
     const label = new Text({
       text,
       style: {
-        fontFamily: 'system-ui, sans-serif',
+        fontFamily: tokens.font.family,
         fontSize: size,
         fontWeight: '800',
         fill: color,
-        stroke: { color: 0x000000, width: 4 },
+        stroke: { color: px('shadow'), width: 4 },
       },
     });
     label.anchor.set(0.5);
@@ -302,7 +303,12 @@ export class BattlePlayer {
     if (!v) return Promise.resolve();
     if (absorbed > 0) v.setShield(v.shield - absorbed);
     v.setHp(hp);
-    const color = source === 'collision' ? 0xffa53a : source === 'thorns' ? COLOR.thorns : 0xff4d4d;
+    const color =
+      source === 'collision'
+        ? px('fxCollision')
+        : source === 'thorns'
+          ? COLOR.thorns
+          : px('fxDamage');
     const text = absorbed >= amount ? `🛡${amount}` : `-${amount - absorbed}`;
     this.floatText(
       text,
@@ -379,7 +385,9 @@ export class BattlePlayer {
     if (!v) return;
     // Вспышка в точке удара: между фигурой и клеткой, куда её толкнули.
     const dst = this.board.toScreen(at);
-    const spark = new Graphics().star(0, 0, 6, CELL * 0.22, CELL * 0.1).fill({ color: 0xfff1a8 });
+    const spark = new Graphics()
+      .star(0, 0, 6, CELL * 0.22, CELL * 0.1)
+      .fill({ color: px('fxSpark') });
     spark.position.set((v.base.x + dst.x) / 2, (v.base.y + dst.y) / 2);
     this.board.fxLayer.addChild(spark);
 

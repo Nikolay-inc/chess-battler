@@ -2,13 +2,14 @@ import { Circle, Container, Graphics, Rectangle, Text } from 'pixi.js';
 import { attackZone, moveTargets } from '@chess-battler/sim';
 import type { Family, Rules, Side, Stars, Vec } from '@chess-battler/sim';
 import { getUnit } from '@chess-battler/content';
+import { px, tokens } from './theme/tokens';
 
 export const CELL = 76;
 export const PAD = 10;
 /** Отступ между доской и скамейкой. */
 export const BENCH_GAP = 14;
 
-export const SIDE_COLOR: Record<Side, number> = { A: 0x4da3ff, B: 0xff6b5b };
+export const SIDE_COLOR: Record<Side, number> = { A: px('sideA'), B: px('sideB') };
 export const GLYPH: Record<Family, string> = {
   legion: '♟',
   riders: '♞',
@@ -51,17 +52,17 @@ export class UnitView extends Container {
 
     const body = new Graphics()
       .circle(0, 0, r)
-      .fill({ color: 0x1d2029 })
+      .fill({ color: px('unitBody') })
       .stroke({ color, width: look.stars > 1 ? 4 : 3 });
-    if (look.stars === 3) body.circle(0, 0, r + 4).stroke({ color: 0xf2c14e, width: 2 });
+    if (look.stars === 3) body.circle(0, 0, r + 4).stroke({ color: px('accent'), width: 2 });
     const glyph = new Text({
       text: GLYPH[def.family],
-      style: { fontFamily: 'serif', fontSize: 34, fill: color },
+      style: { fontFamily: tokens.font.glyph, fontSize: 34, fill: color },
     });
     glyph.anchor.set(0.5, 0.6);
     const label = new Text({
       text: def.name,
-      style: { fontFamily: 'system-ui, sans-serif', fontSize: 9, fill: 0xc8cad3 },
+      style: { fontFamily: tokens.font.family, fontSize: 9, fill: px('unitLabel') },
     });
     label.anchor.set(0.5, 0);
     label.y = r * 0.35;
@@ -71,10 +72,10 @@ export class UnitView extends Container {
       const stars = new Text({
         text: '★'.repeat(look.stars),
         style: {
-          fontFamily: 'system-ui, sans-serif',
+          fontFamily: tokens.font.family,
           fontSize: 12,
-          fill: 0xf2c14e,
-          stroke: { color: 0x000000, width: 3 },
+          fill: px('accent'),
+          stroke: { color: px('shadow'), width: 3 },
         },
       });
       stars.anchor.set(0.5, 0.5);
@@ -84,7 +85,7 @@ export class UnitView extends Container {
 
     this.badge = new Text({
       text: '',
-      style: { fontFamily: 'system-ui, sans-serif', fontSize: 16 },
+      style: { fontFamily: tokens.font.family, fontSize: 16 },
     });
     this.badge.anchor.set(0.5);
     this.badge.position.set(r * 0.85, -r * 0.75);
@@ -132,12 +133,12 @@ export class UnitView extends Container {
     const g = this.hpBar
       .clear()
       .rect(-w / 2, 0, w, 5)
-      .fill({ color: 0x000000, alpha: 0.6 })
+      .fill({ color: px('shadow'), alpha: 0.6 })
       .rect(-w / 2, 0, w * frac, 5)
-      .fill({ color: frac > 0.5 ? 0x5ad17a : frac > 0.25 ? 0xf2c14e : 0xff5b5b });
+      .fill({ color: frac > 0.5 ? px('success') : frac > 0.25 ? px('accent') : px('danger') });
     if (this.shield > 0) {
       const sw = Math.min(w, (w * this.shield) / this.maxHp);
-      g.rect(-w / 2, -3, sw, 3).fill({ color: 0x7fd8ff });
+      g.rect(-w / 2, -3, sw, 3).fill({ color: px('info') });
     }
   }
 }
@@ -166,13 +167,20 @@ export class BoardView extends Container {
         const p = this.toScreen({ x, y });
         const own = y < this.rows / 2 ? 'A' : 'B';
         const light = (x + y) % 2 === 0;
-        const base = own === 'A' ? (light ? 0x2a3242 : 0x232a38) : light ? 0x3a2c30 : 0x312529;
+        const base =
+          own === 'A'
+            ? light
+              ? px('boardOwnLight')
+              : px('boardOwnDark')
+            : light
+              ? px('boardEnemyLight')
+              : px('boardEnemyDark');
         grid.rect(p.x - CELL / 2, p.y - CELL / 2, CELL, CELL).fill({ color: base });
       }
     }
     // Линия фронта.
     const midY = PAD + (this.rows / 2) * CELL;
-    grid.rect(PAD, midY - 1, this.cols * CELL, 2).fill({ color: 0xffffff, alpha: 0.18 });
+    grid.rect(PAD, midY - 1, this.cols * CELL, 2).fill({ color: px('border'), alpha: 0.18 });
     // Тап по пустому полю снимает выделение.
     grid.eventMode = 'static';
     grid.hitArea = new Rectangle(0, 0, this.pixelWidth, this.pixelHeight);
@@ -181,10 +189,10 @@ export class BoardView extends Container {
     // Затемнение половины соперника во время подготовки.
     const veil = new Graphics()
       .rect(PAD, PAD, this.cols * CELL, (this.rows / 2) * CELL)
-      .fill({ color: 0x14161c, alpha: 0.55 });
+      .fill({ color: px('bg'), alpha: 0.55 });
     const veilText = new Text({
       text: 'Соперник появится в бою',
-      style: { fontFamily: 'system-ui, sans-serif', fontSize: 15, fill: 0x8a8f9e },
+      style: { fontFamily: tokens.font.family, fontSize: 15, fill: px('textMuted') },
     });
     veilText.anchor.set(0.5);
     veilText.position.set(this.pixelWidth / 2, PAD + (this.rows / 4) * CELL);
@@ -311,20 +319,20 @@ export class BoardView extends Container {
     const half = CELL / 2;
     const own = this.toScreen(v.cell);
     g.rect(own.x - half + 2, own.y - half + 2, CELL - 4, CELL - 4).stroke({
-      color: 0xf2c14e,
+      color: px('accent'),
       width: 3,
     });
     for (const p of moveTargets(def.move, v.cell, side, this.rules, occupied)) {
       const c = this.toScreen(p);
-      g.rect(c.x - half, c.y - half, CELL, CELL).fill({ color: 0xffffff, alpha: 0.07 });
-      g.circle(c.x, c.y, 7).fill({ color: 0xffffff, alpha: 0.45 });
+      g.rect(c.x - half, c.y - half, CELL, CELL).fill({ color: px('border'), alpha: 0.07 });
+      g.circle(c.x, c.y, 7).fill({ color: px('border'), alpha: 0.45 });
     }
     for (const p of attackZone(def.attack, v.cell, side, this.rules, occupied)) {
       const c = this.toScreen(p);
       const hit = enemyAt(p);
       g.rect(c.x - half + 3, c.y - half + 3, CELL - 6, CELL - 6)
-        .fill({ color: 0xff3b3b, alpha: hit ? 0.35 : 0.16 })
-        .stroke({ color: 0xff5b5b, width: 2, alpha: hit ? 0.95 : 0.5 });
+        .fill({ color: px('fxTelegraph'), alpha: hit ? 0.35 : 0.16 })
+        .stroke({ color: px('danger'), width: 2, alpha: hit ? 0.95 : 0.5 });
     }
   }
 }
@@ -342,7 +350,7 @@ export class BenchView extends Container {
     super();
     this.title = new Text({
       text: 'Скамейка',
-      style: { fontFamily: 'system-ui, sans-serif', fontSize: 11, fill: 0x8a8f9e },
+      style: { fontFamily: tokens.font.family, fontSize: 11, fill: px('textMuted') },
     });
     this.title.position.set(PAD, 0);
     this.addChild(this.slotsG, this.title);
@@ -375,8 +383,8 @@ export class BenchView extends Container {
       const c = this.slotCenter(i);
       this.slotsG
         .roundRect(c.x - CELL / 2, c.y - CELL / 2, CELL, CELL, 10)
-        .fill({ color: i === hovered ? 0x2f3a4f : 0x1d2029 })
-        .stroke({ color: 0xffffff, alpha: i === hovered ? 0.4 : 0.08, width: 1 });
+        .fill({ color: i === hovered ? px('surfaceHover') : px('surface') })
+        .stroke({ color: px('border'), alpha: i === hovered ? 0.4 : 0.08, width: 1 });
     }
   }
 

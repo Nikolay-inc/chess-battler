@@ -5,6 +5,7 @@ import { DEFAULT_RULES, sellValue, starScaledDef } from '@chess-battler/sim';
 import type { Location, OwnedUnit, RunAction, RunConfig, RunState, Vec } from '@chess-battler/sim';
 import type { BenchView, BoardView, UnitLook, UnitView } from './board-view';
 import { CELL } from './board-view';
+import { px } from './theme/tokens';
 
 /** Сдвиг (в CSS-пикселях), после которого касание считается перетаскиванием. */
 const DRAG_THRESHOLD = 8;
@@ -186,8 +187,8 @@ export class PrepController {
       const c = this.board.toScreen(target);
       this.hoverCell
         .roundRect(c.x - CELL / 2 + 3, c.y - CELL / 2 + 3, CELL - 6, CELL - 6, 8)
-        .fill({ color: 0x4da3ff, alpha: 0.18 })
-        .stroke({ color: 0x4da3ff, width: 2, alpha: 0.8 });
+        .fill({ color: px('sideA'), alpha: 0.18 })
+        .stroke({ color: px('sideA'), width: 2, alpha: 0.8 });
     }
   }
 }

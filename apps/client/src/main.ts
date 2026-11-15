@@ -11,11 +11,13 @@ import { Tweener } from './tween';
 import { loadRun, saveRun } from './storage';
 import { $ } from './ui';
 import { version } from '../package.json';
+import { applyTokens, px } from './theme/tokens';
 import './style.css';
 
 const SPEEDS = [1, 2, 4];
 
 async function main(): Promise<void> {
+  applyTokens();
   const rules = DEFAULT_RULES;
   const board = new BoardView(rules);
   const bench = new BenchView(RUN_CONFIG.benchSlots, board.pixelWidth);
@@ -25,7 +27,7 @@ async function main(): Promise<void> {
   await app.init({
     width: board.pixelWidth,
     height: bench.y + bench.pixelHeight,
-    background: 0x14161c,
+    background: px('bg'),
     antialias: true,
     resolution: Math.min(window.devicePixelRatio || 1, 3),
     autoDensity: true,
