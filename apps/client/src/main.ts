@@ -68,15 +68,18 @@ async function main(): Promise<void> {
   });
 
   // Версия: номер из package.json + короткий хэш коммита сборки (в dev — «dev»).
-  const build = (import.meta.env.VITE_APP_VERSION ?? 'dev').slice(0, 7);
+  const build = (import.meta.env.VITE_APP_VERSION || 'dev').slice(0, 7);
   const appVersion = `${version}+${build}`;
-  $('version').textContent = `v${version} · ${build}`;
+  // Превью-деплои Vercel помечены и не пишут аналитику, чтобы не смешивать с тестерами.
+  const deployEnv = import.meta.env.VITE_DEPLOY_ENV || 'production';
+  const isPreview = deployEnv !== 'production';
+  $('version').textContent = `v${version} · ${build}${isPreview ? ` · ${deployEnv}` : ''}`;
 
   // Аналитика: в проде отправляется в Supabase, в dev — только в консоль.
   const analytics = new Analytics({
     url: import.meta.env.VITE_SUPABASE_URL,
     key: import.meta.env.VITE_SUPABASE_KEY,
-    enabled: import.meta.env.PROD || import.meta.env.VITE_ANALYTICS_DEV === '1',
+    enabled: (import.meta.env.PROD && !isPreview) || import.meta.env.VITE_ANALYTICS_DEV === '1',
     deviceId: deviceId(),
     sessionId: sessionTracker(),
     appVersion,
