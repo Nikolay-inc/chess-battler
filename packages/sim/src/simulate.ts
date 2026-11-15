@@ -268,25 +268,25 @@ class Battle {
    * Край поля: урон толкаемому. Фигура на пути: урон обоим, толкаемый стоит,
    * задетая фигура получает толчок силой power - 1 (цепочка).
    */
-  private push(u: Unit, dir: Vec, power: number): void {
+  private push(u: Unit, dir: Vec, power: number, depth = 0): void {
     for (let p = power; p > 0; p--) {
       const to = add(u.pos, dir);
       if (!inBounds(to, this.rules)) {
-        this.events.push({ type: 'collision', unit: u.id, other: null, at: to });
+        this.events.push({ type: 'collision', unit: u.id, other: null, at: to, depth });
         this.damage(u, this.rules.collisionDamage, 'collision');
         return;
       }
       const hit = this.at(to);
       if (hit) {
-        this.events.push({ type: 'collision', unit: u.id, other: hit.id, at: to });
+        this.events.push({ type: 'collision', unit: u.id, other: hit.id, at: to, depth });
         this.damage(u, this.rules.collisionDamage, 'collision');
         this.damage(hit, this.rules.collisionDamage, 'collision');
-        if (hit.hp > 0 && p - 1 > 0) this.push(hit, dir, p - 1);
+        if (hit.hp > 0 && p - 1 > 0) this.push(hit, dir, p - 1, depth + 1);
         return;
       }
       const from = u.pos;
       this.place(u, to);
-      this.events.push({ type: 'push', unit: u.id, from, to });
+      this.events.push({ type: 'push', unit: u.id, from, to, depth });
     }
   }
 

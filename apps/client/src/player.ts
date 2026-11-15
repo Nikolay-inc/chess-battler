@@ -7,6 +7,19 @@ import type { ActionGroup } from './timeline';
 import type { Tweener } from './tween';
 import { easeInOutQuad, easeOutCubic } from './tween';
 
+/** Состояние анимации одного действия. */
+interface ActionContext {
+  /** Фигуры, над которыми уже показана стрелка толчка. */
+  readonly arrowed: Set<number>;
+  /** Самое длинное звено цепочки, о котором уже сообщили надписью. */
+  chainShown: number;
+}
+
+const COLOR = {
+  arrow: 0xfff1a8,
+  chain: 0xffa53a,
+} as const;
+
 /** Длительности анимаций на ×1, мс. */
 const MS = {
   telegraph: 140,
@@ -15,6 +28,8 @@ const MS = {
   damageBeat: 60,
   floatText: 650,
   push: 160,
+  arrow: 380,
+  shockwave: 420,
   collision: 200,
   death: 260,
 } as const;
@@ -74,20 +89,22 @@ export class BattlePlayer {
   }
 
   private async playAction(action: ActionGroup): Promise<void> {
-    for (const e of action.events) await this.apply(e);
+    const ctx: ActionContext = { arrowed: new Set(), chainShown: 0 };
+    for (const e of action.events) await this.apply(e, ctx);
   }
 
-  private async apply(e: BattleEvent): Promise<void> {
+  private async apply(e: BattleEvent, ctx: ActionContext): Promise<void> {
     switch (e.type) {
       case 'move':
         return this.slide(e.unit, e.to, MS.move, easeInOutQuad);
       case 'push':
-        return this.slide(e.unit, e.to, MS.push, easeOutCubic);
+        return this.push(e.unit, e.from, e.to, e.depth, ctx);
       case 'attack':
         return this.attack(e.unit, e.target);
       case 'damage':
         return this.damage(e.unit, e.amount, e.hp, e.source === 'collision');
       case 'collision':
+        this.chain(e.unit, e.depth, ctx);
         return this.collision(e.unit, e.other, e.at);
       case 'death':
         return this.death(e.unit);
@@ -134,6 +151,66 @@ export class BattlePlayer {
     v.sync();
   }
 
+  /** Отбрасывание: стрелка направления (один раз за толчок) и резкий сдвиг. */
+  private push(id: number, from: Vec, to: Vec, depth: number, ctx: ActionContext): Promise<void> {
+    const v = this.unit(id);
+    if (!v) return Promise.resolve();
+    if (!ctx.arrowed.has(id)) {
+      ctx.arrowed.add(id);
+      this.arrow(v, { x: to.x - from.x, y: to.y - from.y });
+    }
+    this.chain(id, depth, ctx);
+    return this.slide(id, to, MS.push, easeOutCubic);
+  }
+
+  /** Стрелка направления толчка поверх фигуры. dir — в координатах доски. */
+  private arrow(v: UnitView, dir: Vec): void {
+    // На экране y растёт вниз, на доске — вверх.
+    const angle = Math.atan2(-dir.y, dir.x);
+    const len = CELL * 0.62;
+    const g = new Graphics()
+      .moveTo(-len / 2, 0)
+      .lineTo(len / 2 - 10, 0)
+      .stroke({ color: COLOR.arrow, width: 6, cap: 'round' })
+      .poly([len / 2, 0, len / 2 - 16, -11, len / 2 - 16, 11])
+      .fill({ color: COLOR.arrow });
+    g.rotation = angle;
+    g.position.set(v.base.x, v.base.y);
+    this.board.fxLayer.addChild(g);
+    const x0 = v.base.x;
+    const y0 = v.base.y;
+    void this.tw
+      .run(MS.arrow, (t) => {
+        if (g.destroyed) return;
+        const shift = easeOutCubic(t) * CELL * 0.5;
+        g.position.set(x0 + Math.cos(angle) * shift, y0 + Math.sin(angle) * shift);
+        g.alpha = t < 0.5 ? 1 : 1 - (t - 0.5) / 0.5;
+      })
+      .then(() => !g.destroyed && g.destroy());
+  }
+
+  /** Цепочка (2+ толчка за удар): ударная волна на звене и надпись «Цепочка ×N». */
+  private chain(id: number, depth: number, ctx: ActionContext): void {
+    if (depth < 1) return;
+    const v = this.unit(id);
+    if (!v) return;
+    const wave = new Graphics().circle(0, 0, CELL * 0.4).stroke({ color: COLOR.chain, width: 5 });
+    wave.position.set(v.base.x, v.base.y);
+    this.board.fxLayer.addChild(wave);
+    void this.tw
+      .run(MS.shockwave, (t) => {
+        if (wave.destroyed) return;
+        wave.scale.set(1 + easeOutCubic(t) * 0.9);
+        wave.alpha = 1 - t;
+      })
+      .then(() => !wave.destroyed && wave.destroy());
+    const links = depth + 1;
+    if (links > ctx.chainShown) {
+      ctx.chainShown = links;
+      this.floatText(`Цепочка ×${links}`, v.base.x, v.base.y - CELL * 0.55, COLOR.chain, 18);
+    }
+  }
+
   /** «Телеграф»: короткая вспышка-прицел на цели перед ударом. */
   private async telegraph(target: UnitView): Promise<void> {
     const ring = new Graphics()
@@ -163,6 +240,9 @@ export class BattlePlayer {
       },
     });
     label.anchor.set(0.5);
+    // Не даём надписи вылезти за край доски.
+    const half = label.width / 2 + 4;
+    x = Math.min(this.board.pixelWidth - half, Math.max(half, x));
     label.position.set(x, y);
     this.board.fxLayer.addChild(label);
     void this.tw

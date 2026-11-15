@@ -3,7 +3,7 @@
 exports[`детерминизм > golden: лог эталонного боя не изменился 1`] = `
 {
   "events": 164,
-  "fingerprint": "11a025a0",
+  "fingerprint": "fa12e7cd",
   "reason": "elimination",
   "ticks": 10,
   "winner": "A",

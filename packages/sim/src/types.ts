@@ -85,7 +85,14 @@ export type BattleEvent =
       readonly hp: number;
       readonly source: DamageSource;
     }
-  | { readonly type: 'push'; readonly unit: number; readonly from: Vec; readonly to: Vec }
+  | {
+      readonly type: 'push';
+      readonly unit: number;
+      readonly from: Vec;
+      readonly to: Vec;
+      /** 0 — толчок от удара, 1+ — звено цепочки. */
+      readonly depth: number;
+    }
   | {
       readonly type: 'collision';
       /** Кого толкали. */
@@ -94,6 +101,8 @@ export type BattleEvent =
       readonly other: number | null;
       /** Клетка, куда фигура пыталась сдвинуться. */
       readonly at: Vec;
+      /** Глубина цепочки толкаемой фигуры (см. push.depth). */
+      readonly depth: number;
     }
   | { readonly type: 'death'; readonly unit: number }
   | {

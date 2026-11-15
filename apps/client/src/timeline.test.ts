@@ -37,8 +37,8 @@ describe('involvedUnits', () => {
     const events: BattleEvent[] = [
       { type: 'attack', unit: 1, target: 2 },
       { type: 'damage', unit: 2, amount: 1, hp: 5, source: 'attack' },
-      { type: 'collision', unit: 2, other: 3, at: p },
-      { type: 'collision', unit: 3, other: null, at: p },
+      { type: 'collision', unit: 2, other: 3, at: p, depth: 0 },
+      { type: 'collision', unit: 3, other: null, at: p, depth: 1 },
     ];
     expect(involvedUnits({ events }).sort()).toEqual([1, 2, 3]);
   });

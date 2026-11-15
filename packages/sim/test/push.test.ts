@@ -11,14 +11,14 @@ describe('толчки', () => {
     expect(eventsOfTick(r, 1)).toEqual([
       { type: 'attack', unit: 0, target: 1 },
       { type: 'damage', unit: 1, amount: 1, hp: 99, source: 'attack' },
-      { type: 'push', unit: 1, from: { x: 2, y: 2 }, to: { x: 2, y: 3 } },
+      { type: 'push', unit: 1, from: { x: 2, y: 2 }, to: { x: 2, y: 3 }, depth: 0 },
     ]);
   });
 
   it('столкновение с краем ранит только толкаемого', () => {
     const r = simulate({ units: [at(striker(), 'A', 2, 4), at(dummy(), 'B', 2, 5)] });
     expect(eventsOfTick(r, 1).slice(2)).toEqual([
-      { type: 'collision', unit: 1, other: null, at: { x: 2, y: 6 } },
+      { type: 'collision', unit: 1, other: null, at: { x: 2, y: 6 }, depth: 0 },
       { type: 'damage', unit: 1, amount: CD, hp: 99 - CD, source: 'collision' },
     ]);
   });
@@ -28,7 +28,7 @@ describe('толчки', () => {
       units: [at(striker(), 'A', 2, 1), at(dummy(), 'B', 2, 2), at(dummy(), 'B', 2, 3)],
     });
     expect(eventsOfTick(r, 1).slice(2)).toEqual([
-      { type: 'collision', unit: 1, other: 2, at: { x: 2, y: 3 } },
+      { type: 'collision', unit: 1, other: 2, at: { x: 2, y: 3 }, depth: 0 },
       { type: 'damage', unit: 1, amount: CD, hp: 99 - CD, source: 'collision' },
       { type: 'damage', unit: 2, amount: CD, hp: 100 - CD, source: 'collision' },
     ]);
@@ -41,10 +41,10 @@ describe('толчки', () => {
       units: [at(striker({ push: 2 }), 'A', 2, 1), at(dummy(), 'B', 2, 2), at(dummy(), 'B', 2, 3)],
     });
     expect(eventsOfTick(r, 1).slice(2)).toEqual([
-      { type: 'collision', unit: 1, other: 2, at: { x: 2, y: 3 } },
+      { type: 'collision', unit: 1, other: 2, at: { x: 2, y: 3 }, depth: 0 },
       { type: 'damage', unit: 1, amount: CD, hp: 99 - CD, source: 'collision' },
       { type: 'damage', unit: 2, amount: CD, hp: 100 - CD, source: 'collision' },
-      { type: 'push', unit: 2, from: { x: 2, y: 3 }, to: { x: 2, y: 4 } },
+      { type: 'push', unit: 2, from: { x: 2, y: 3 }, to: { x: 2, y: 4 }, depth: 1 },
     ]);
   });
 
@@ -59,9 +59,9 @@ describe('толчки', () => {
     });
     const ev = eventsOfTick(r, 1);
     expect(ev.filter((e) => e.type === 'collision')).toEqual([
-      { type: 'collision', unit: 1, other: 2, at: { x: 2, y: 4 } },
-      { type: 'collision', unit: 2, other: 3, at: { x: 2, y: 5 } },
-      { type: 'collision', unit: 3, other: null, at: { x: 2, y: 6 } },
+      { type: 'collision', unit: 1, other: 2, at: { x: 2, y: 4 }, depth: 0 },
+      { type: 'collision', unit: 2, other: 3, at: { x: 2, y: 5 }, depth: 1 },
+      { type: 'collision', unit: 3, other: null, at: { x: 2, y: 6 }, depth: 2 },
     ]);
     const hpAfter = (id: number) => ev.filter((e) => e.type === 'damage' && e.unit === id).at(-1);
     expect(hpAfter(1)).toMatchObject({ hp: 99 - CD });
@@ -74,8 +74,8 @@ describe('толчки', () => {
       units: [at(striker({ push: 2 }), 'A', 2, 1), at(dummy(), 'B', 2, 2), at(dummy(), 'B', 2, 4)],
     });
     expect(eventsOfTick(r, 1).slice(2)).toEqual([
-      { type: 'push', unit: 1, from: { x: 2, y: 2 }, to: { x: 2, y: 3 } },
-      { type: 'collision', unit: 1, other: 2, at: { x: 2, y: 4 } },
+      { type: 'push', unit: 1, from: { x: 2, y: 2 }, to: { x: 2, y: 3 }, depth: 0 },
+      { type: 'collision', unit: 1, other: 2, at: { x: 2, y: 4 }, depth: 0 },
       { type: 'damage', unit: 1, amount: CD, hp: 99 - CD, source: 'collision' },
       { type: 'damage', unit: 2, amount: CD, hp: 100 - CD, source: 'collision' },
     ]);
@@ -120,6 +120,7 @@ describe('толчки', () => {
       unit: 1,
       from: { x: 2, y: 2 },
       to: { x: 3, y: 3 },
+      depth: 0,
     });
   });
 
@@ -130,6 +131,7 @@ describe('толчки', () => {
       unit: 0,
       from: { x: 2, y: 2 },
       to: { x: 2, y: 1 },
+      depth: 0,
     });
   });
 });
