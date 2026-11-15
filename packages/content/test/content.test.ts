@@ -1,15 +1,41 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_RULES, createSetup, simulate, validateSetup } from '@chess-battler/sim';
 import type { Family } from '@chess-battler/sim';
-import { DEMO_ARMY_A, DEMO_ARMY_B, UNIT_LIST, getUnit, resolveArmy } from '../src';
+import {
+  DEMO_ARMY_A,
+  DEMO_ARMY_B,
+  RUN_CONFIG,
+  SYNERGIES,
+  UNIT_LIST,
+  getUnit,
+  resolveArmy,
+} from '../src';
+import { createRun } from '@chess-battler/sim';
 
 describe('стартовые фигуры', () => {
-  it('8 фигур, по 2 на каждую семью', () => {
-    expect(UNIT_LIST).toHaveLength(8);
-    const families: Family[] = ['legion', 'riders', 'mystics', 'guards'];
+  const families: Family[] = ['legion', 'riders', 'mystics', 'guards'];
+
+  it('16 фигур: в каждой семье по 4 — две за 1 золото, одна за 2, одна за 3', () => {
+    expect(UNIT_LIST).toHaveLength(16);
     for (const f of families) {
-      expect(UNIT_LIST.filter((u) => u.family === f)).toHaveLength(2);
+      const costs = UNIT_LIST.filter((u) => u.family === f).map((u) => u.cost);
+      expect(costs.sort()).toEqual([1, 1, 2, 3]);
     }
+  });
+
+  it('у каждой семьи синергия на 2 и 4 фигуры', () => {
+    expect(SYNERGIES.map((s) => s.family).sort()).toEqual([...families].sort());
+    for (const s of SYNERGIES) expect(s.tiers.map((t) => t.count)).toEqual([2, 4]);
+  });
+
+  it('у фигур со способностями есть описание для интерфейса', () => {
+    for (const u of UNIT_LIST) {
+      if (u.abilities?.length) expect(u.description, u.id).toBeTruthy();
+    }
+  });
+
+  it('конфиг забега валиден', () => {
+    expect(() => createRun(1, RUN_CONFIG)).not.toThrow();
   });
 
   it('id уникальны и в латинице', () => {
@@ -24,6 +50,7 @@ describe('стартовые фигуры', () => {
       side: 'A' as const,
       pos: { x: i % 5, y: Math.floor(i / 5) },
     }));
+    expect(units.length).toBeLessThanOrEqual(30);
     expect(() => validateSetup({ units }, DEFAULT_RULES)).not.toThrow();
     for (const u of UNIT_LIST) {
       expect(u.move.dirs.length).toBeGreaterThan(0);
@@ -37,8 +64,10 @@ describe('стартовые фигуры', () => {
 });
 
 describe('демо-армии', () => {
-  it('ставятся на поле и дают законченный бой', () => {
-    const r = simulate(createSetup(resolveArmy(DEMO_ARMY_A), resolveArmy(DEMO_ARMY_B)));
+  it('ставятся на поле и дают законченный бой с синергиями', () => {
+    const r = simulate(
+      createSetup(resolveArmy(DEMO_ARMY_A), resolveArmy(DEMO_ARMY_B), DEFAULT_RULES, SYNERGIES),
+    );
     expect(r.events.at(-1)?.type).toBe('end');
     expect(r.events.some((e) => e.type === 'collision')).toBe(true);
   });
