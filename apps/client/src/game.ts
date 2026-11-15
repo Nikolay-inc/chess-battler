@@ -16,6 +16,7 @@ import type { Location, OwnedUnit, RoundOutcome, RunAction, RunState } from '@ch
 import type { BenchView, BoardView } from './board-view';
 import type { BattlePlayer } from './player';
 import { PrepController } from './prep';
+import { Tutorial } from './tutorial';
 import { PLAYER_SIDE, renderResult, renderRunEnd } from './result-view';
 import {
   $,
@@ -56,6 +57,7 @@ export class Game {
   private state: RunState;
   private readonly prep: PrepController;
   private inBattle = false;
+  private readonly tutorial: Tutorial;
   private roundStartedAt = performance.now();
 
   constructor(
@@ -85,6 +87,16 @@ export class Game {
         });
       else hideInfo($('info'));
     };
+
+    this.tutorial = new Tutorial($('coach'), {
+      shop: () => $('shop').getBoundingClientRect(),
+      // Поле игрока — нижняя половина доски (верх скамейки ≈ 83% высоты canvas).
+      board: () => {
+        const c = app.canvas.getBoundingClientRect();
+        return new DOMRect(c.left, c.top + c.height * 0.5, c.width, c.height * 0.33);
+      },
+      fight: () => $('fight').getBoundingClientRect(),
+    });
 
     $('reroll').addEventListener('click', () => this.dispatch({ type: 'reroll' }));
     $('freeze').addEventListener('click', () => this.dispatch({ type: 'freeze' }));
@@ -182,6 +194,7 @@ export class Game {
     $('freeze').setAttribute('aria-pressed', String(s.frozen));
     $('fight').textContent = `В бой · раунд ${s.round}`;
     this.prep.render(s);
+    this.tutorial.update(s);
   }
 
   async fight(): Promise<void> {
@@ -192,6 +205,7 @@ export class Game {
       return;
     }
     this.inBattle = true;
+    this.tutorial.onFight();
     hideInfo($('info'));
     this.board.clearFocus();
 
@@ -242,6 +256,7 @@ export class Game {
 
   private showRunEnd(): void {
     const s = this.state;
+    this.tutorial.hide();
     document.body.dataset.phase = 'end';
     renderHud($('hud'), s, RUN_CONFIG);
     renderRunEnd(
