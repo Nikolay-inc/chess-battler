@@ -41,6 +41,9 @@ importers:
 
   apps/client:
     dependencies:
+      '@chess-battler/bots':
+        specifier: workspace:*
+        version: link:../../packages/bots
       '@chess-battler/content':
         specifier: workspace:*
         version: link:../../packages/content

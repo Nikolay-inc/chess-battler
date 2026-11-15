@@ -64,7 +64,13 @@ export function battleMoments(result: BattleResult): BattleMoment[] {
   };
 
   for (const e of result.events) {
-    if (e.type === 'tick' || e.type === 'move' || e.type === 'end') {
+    if (
+      e.type === 'tick' ||
+      e.type === 'move' ||
+      e.type === 'support' ||
+      e.type === 'stunned' ||
+      e.type === 'end'
+    ) {
       flush();
       if (e.type === 'tick') tick = e.tick;
     } else if (e.type === 'attack') {

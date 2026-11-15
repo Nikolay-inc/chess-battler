@@ -24,6 +24,30 @@ describe('groupByTick', () => {
   });
 });
 
+describe('groupByTick: новые события', () => {
+  it('начало боя — такт 0; лечение вместо хода и пропуск хода — отдельные действия', () => {
+    const events: BattleEvent[] = [
+      { type: 'shield', unit: 0, amount: 6, by: 1 },
+      { type: 'buff', unit: 2, stat: 'atk', amount: 1, by: 2 },
+      { type: 'tick', tick: 1 },
+      { type: 'heal', unit: 0, amount: 2, hp: 9, by: 1 },
+      { type: 'stunned', unit: 3 },
+      { type: 'support', unit: 1 },
+      { type: 'heal', unit: 0, amount: 2, hp: 11, by: 1 },
+      { type: 'move', unit: 2, from: p, to: p },
+    ];
+    const ticks = groupByTick(events);
+    expect(ticks.map((t) => t.tick)).toEqual([0, 1]);
+    expect(ticks[0]!.actions).toHaveLength(1);
+    expect(ticks[1]!.actions.map((a) => a.events.map((e) => e.type))).toEqual([
+      ['heal'],
+      ['stunned'],
+      ['support', 'heal'],
+      ['move'],
+    ]);
+  });
+});
+
 describe('staggerMs', () => {
   it('сжимает каскад при большом числе действий, но не меньше минимума', () => {
     expect(staggerMs(1)).toBe(0);

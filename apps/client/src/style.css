@@ -37,37 +37,93 @@ body {
   max-width: 480px;
   min-height: 100%;
   margin: 0 auto;
-  padding: max(12px, env(safe-area-inset-top)) 16px max(12px, env(safe-area-inset-bottom));
+  padding: max(10px, env(safe-area-inset-top)) 16px max(12px, env(safe-area-inset-bottom));
 }
 
-.bar {
+/* ---------- HUD ---------- */
+
+.hud {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  min-height: 44px;
+  gap: 10px;
+  white-space: nowrap;
+  min-height: 40px;
+  font-variant-numeric: tabular-nums;
 }
-
-.army {
-  font-weight: 600;
+.hud-round {
+  font-weight: 700;
 }
-.army-a {
-  color: var(--side-a);
-}
-.army-b {
+.hud-lives {
   color: var(--side-b);
+  letter-spacing: 1px;
+}
+.hud-wins {
+  color: var(--muted);
+}
+.hud-gold {
+  margin-left: auto;
+  font-weight: 700;
+  color: var(--accent);
+}
+.hud-gold::before {
+  content: '';
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 5px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: -1px;
+}
+.hud-menu {
+  min-height: 36px;
+  min-width: 40px;
+  padding: 0 10px;
+  font-size: 18px;
+  color: var(--muted);
 }
 
-.tick {
+/* ---------- Синергии ---------- */
+
+.synergies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-height: 30px;
+  align-items: center;
+}
+.syn-empty {
+  font-size: 12px;
+  color: var(--muted);
+}
+.syn-chip {
+  min-height: 30px;
+  padding: 0 10px;
+  border-radius: 15px;
+  font-size: 13px;
+  color: var(--muted);
+  background: var(--panel);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+.syn-chip.active {
+  color: var(--text);
+  border-color: rgba(242, 193, 78, 0.6);
+  background: rgba(242, 193, 78, 0.12);
+}
+
+/* ---------- Сцена ---------- */
+
+.battle-bar {
+  display: none;
+  justify-content: flex-end;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
 }
-
-.stage {
-  flex: 1;
+body[data-phase='battle'] .battle-bar {
   display: flex;
-  align-items: center;
-  justify-content: center;
+}
+body[data-phase='battle'] .synergies {
+  display: none;
 }
 
 .stage canvas {
@@ -75,11 +131,115 @@ body {
   width: 100%;
   height: auto;
   border-radius: 12px;
+  touch-action: none;
 }
+
+/* ---------- Магазин ---------- */
+
+.shop {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 6px;
+  border-radius: 12px;
+  transition: background 0.15s;
+}
+.shop.frozen {
+  outline: 2px solid rgba(127, 216, 255, 0.5);
+  outline-offset: 3px;
+}
+.shop.sell-target::after {
+  content: attr(data-sell);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  border: 2px dashed rgba(242, 193, 78, 0.6);
+  background: rgba(20, 22, 28, 0.88);
+  color: var(--accent);
+  font-weight: 700;
+}
+.shop.sell-hover::after {
+  background: rgba(242, 193, 78, 0.22);
+}
+
+.shop-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  min-height: 86px;
+  padding: 8px 2px 6px;
+  border-radius: 10px;
+  background: var(--panel);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+}
+.shop-card.empty {
+  background: transparent;
+  border-style: dashed;
+}
+.shop-card:disabled {
+  opacity: 0.4;
+}
+.card-glyph {
+  font-family: serif;
+  font-size: 24px;
+  line-height: 1;
+}
+.card-name {
+  max-width: 100%;
+  font-size: 10.5px;
+  line-height: 1.15;
+  text-align: center;
+  hyphens: auto;
+  overflow-wrap: anywhere;
+}
+.card-stats {
+  font-size: 10px;
+  color: var(--muted);
+}
+.card-cost {
+  position: absolute;
+  top: 4px;
+  right: 5px;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--accent);
+}
+.fam-legion .card-glyph {
+  color: #c9b28a;
+}
+.fam-riders .card-glyph {
+  color: #8ac9a0;
+}
+.fam-mystics .card-glyph {
+  color: #b59cf0;
+}
+.fam-guards .card-glyph {
+  color: #8ab4e6;
+}
+
+/* ---------- Управление ---------- */
 
 .controls {
   display: flex;
   gap: 8px;
+}
+.battle-controls,
+body[data-phase='battle'] .prep-controls,
+body[data-phase='battle'] .shop,
+body[data-phase='end'] .prep-controls,
+body[data-phase='end'] .shop {
+  display: none;
+}
+body[data-phase='battle'] .battle-controls {
+  display: flex;
+}
+body[data-phase='battle'] .hud-menu {
+  visibility: hidden;
 }
 
 button {
@@ -87,27 +247,123 @@ button {
   border: 0;
   border-radius: 10px;
   min-height: 44px;
-  padding: 0 18px;
+  padding: 0 14px;
   cursor: pointer;
   color: var(--text);
   background: var(--panel);
 }
-
 button:disabled {
   opacity: 0.45;
   cursor: default;
 }
-
 .fight {
   flex: 1;
   background: var(--accent);
   color: #1b1b1b;
   font-weight: 700;
 }
-
+.freeze.on {
+  background: rgba(127, 216, 255, 0.25);
+  color: #bfe9ff;
+}
 .speed {
   min-width: 56px;
   font-variant-numeric: tabular-nums;
+}
+.skip {
+  flex: 1;
+}
+
+/* ---------- Панель фигуры ---------- */
+
+.info {
+  position: fixed;
+  left: 50%;
+  bottom: max(70px, calc(env(safe-area-inset-bottom) + 70px));
+  transform: translateX(-50%);
+  width: min(448px, calc(100% - 32px));
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(29, 32, 41, 0.97);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+  z-index: 5;
+}
+.info[hidden] {
+  display: none;
+}
+.info-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.info-sub {
+  font-size: 12px;
+  color: var(--muted);
+}
+.info-close {
+  margin-left: auto;
+  min-height: 32px;
+  min-width: 32px;
+  padding: 0;
+  font-size: 20px;
+  background: transparent;
+  color: var(--muted);
+}
+.info-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin: 6px 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+.info-stats b {
+  color: var(--text);
+}
+.info-text {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.35;
+}
+.info-text.ability {
+  color: var(--accent);
+}
+.info-text.tier {
+  color: var(--muted);
+}
+.info-text.tier.on {
+  color: var(--text);
+}
+.info-hint {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---------- Сообщения ---------- */
+
+.toast {
+  position: fixed;
+  left: 50%;
+  top: 56px;
+  transform: translate(-50%, -8px);
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: rgba(255, 91, 91, 0.92);
+  color: #fff;
+  font-size: 14px;
+  opacity: 0;
+  pointer-events: none;
+  transition:
+    opacity 0.2s,
+    transform 0.2s;
+  z-index: 10;
+}
+.toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
 }
 
 .result {
@@ -198,4 +454,10 @@ button:disabled {
 }
 .result-buttons button {
   flex: 1;
+}
+
+.result-footer {
+  margin: 0 0 14px;
+  color: var(--muted);
+  font-size: 14px;
 }

@@ -1,5 +1,5 @@
 import { Graphics, Text } from 'pixi.js';
-import type { BattleEvent, BattleResult, Vec } from '@chess-battler/sim';
+import type { BattleEvent, BattleResult, BuffStat, Vec } from '@chess-battler/sim';
 import type { BoardView, UnitView } from './board-view';
 import { CELL } from './board-view';
 import { PACING, groupByTick, involvedUnits, staggerMs } from './timeline';
@@ -18,7 +18,20 @@ interface ActionContext {
 const COLOR = {
   arrow: 0xfff1a8,
   chain: 0xffa53a,
+  heal: 0x5ad17a,
+  shield: 0x7fd8ff,
+  buff: 0xf2c14e,
+  stun: 0xd7b8ff,
+  curse: 0xc07bff,
+  promote: 0xf2c14e,
+  thorns: 0xff8a65,
 } as const;
+
+const BUFF_LABEL: Record<BuffStat, string> = {
+  atk: 'ATK',
+  armor: 'броня',
+  initiative: 'иниц.',
+};
 
 /** Длительности анимаций на ×1, мс. */
 const MS = {
@@ -102,7 +115,27 @@ export class BattlePlayer {
       case 'attack':
         return this.attack(e.unit, e.target);
       case 'damage':
-        return this.damage(e.unit, e.amount, e.hp, e.source === 'collision');
+        return this.damage(e.unit, e.amount, e.hp, e.source, e.absorbed ?? 0);
+      case 'heal':
+        return this.heal(e.unit, e.amount, e.hp);
+      case 'shield':
+        return this.shieldUp(e.unit, e.amount);
+      case 'buff':
+        return this.status(e.unit, `+${e.amount} ${BUFF_LABEL[e.stat]}`, COLOR.buff, 40);
+      case 'support':
+        return this.pulse(e.unit, COLOR.heal);
+      case 'stun': {
+        this.unit(e.unit)?.setBadge('💫');
+        return this.status(e.unit, 'Оглушён', COLOR.stun, 80);
+      }
+      case 'stunned': {
+        this.unit(e.unit)?.setBadge('');
+        return this.status(e.unit, 'Пропуск хода', COLOR.stun, 220);
+      }
+      case 'curse':
+        return this.status(e.unit, `Проклятие: броня ${e.armor}`, COLOR.curse, 60);
+      case 'promote':
+        return this.promote(e.unit, e.hp);
       case 'collision':
         this.chain(e.unit, e.depth, ctx);
         return this.collision(e.unit, e.other, e.at);
@@ -254,12 +287,73 @@ export class BattlePlayer {
       .then(() => !label.destroyed && label.destroy());
   }
 
-  private damage(id: number, amount: number, hp: number, collision: boolean): Promise<void> {
+  private damage(
+    id: number,
+    amount: number,
+    hp: number,
+    source: 'attack' | 'collision' | 'thorns',
+    absorbed: number,
+  ): Promise<void> {
+    const v = this.unit(id);
+    if (!v) return Promise.resolve();
+    if (absorbed > 0) v.setShield(v.shield - absorbed);
+    v.setHp(hp);
+    const color = source === 'collision' ? 0xffa53a : source === 'thorns' ? COLOR.thorns : 0xff4d4d;
+    const text = absorbed >= amount ? `🛡${amount}` : `-${amount - absorbed}`;
+    this.floatText(
+      text,
+      v.base.x,
+      v.base.y - CELL * 0.3,
+      absorbed >= amount ? COLOR.shield : color,
+    );
+    return this.tw.wait(MS.damageBeat);
+  }
+
+  private heal(id: number, amount: number, hp: number): Promise<void> {
     const v = this.unit(id);
     if (!v) return Promise.resolve();
     v.setHp(hp);
-    this.floatText(`-${amount}`, v.base.x, v.base.y - CELL * 0.3, collision ? 0xffa53a : 0xff4d4d);
-    return this.tw.wait(MS.damageBeat);
+    this.floatText(`+${amount}`, v.base.x, v.base.y - CELL * 0.3, COLOR.heal);
+    return this.pulse(id, COLOR.heal);
+  }
+
+  private shieldUp(id: number, amount: number): Promise<void> {
+    const v = this.unit(id);
+    if (!v) return Promise.resolve();
+    v.setShield(v.shield + amount);
+    this.floatText(`🛡 +${amount}`, v.base.x, v.base.y - CELL * 0.45, COLOR.shield, 16);
+    return this.pulse(id, COLOR.shield);
+  }
+
+  /** Короткая надпись над фигурой; ждём waitMs, чтобы надписи не слипались. */
+  private status(id: number, text: string, color: number, waitMs: number): Promise<void> {
+    const v = this.unit(id);
+    if (!v) return Promise.resolve();
+    this.floatText(text, v.base.x, v.base.y - CELL * 0.5, color, 14);
+    return this.tw.wait(waitMs);
+  }
+
+  /** Расходящееся кольцо вокруг фигуры. */
+  private async pulse(id: number, color: number): Promise<void> {
+    const v = this.unit(id);
+    if (!v) return;
+    const ring = new Graphics().circle(0, 0, CELL * 0.42).stroke({ color, width: 4 });
+    ring.position.set(v.base.x, v.base.y);
+    this.board.fxLayer.addChild(ring);
+    await this.tw.run(260, (t) => {
+      if (ring.destroyed) return;
+      ring.scale.set(1 + t * 0.35);
+      ring.alpha = 1 - t;
+    });
+    if (!ring.destroyed) ring.destroy();
+  }
+
+  private async promote(id: number, hp: number): Promise<void> {
+    const v = this.unit(id);
+    if (!v) return;
+    v.setHp(hp, v.maxHp + (hp - v.hp));
+    this.floatText('Повышение!', v.base.x, v.base.y - CELL * 0.55, COLOR.promote, 18);
+    await this.pulse(id, COLOR.promote);
   }
 
   private async collision(id: number, otherId: number | null, at: Vec): Promise<void> {

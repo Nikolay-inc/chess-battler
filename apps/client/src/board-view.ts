@@ -1,22 +1,38 @@
 import { Circle, Container, Graphics, Rectangle, Text } from 'pixi.js';
 import { attackZone, moveTargets } from '@chess-battler/sim';
-import type { Family, Rules, Side, UnitSnapshot, Vec } from '@chess-battler/sim';
+import type { Family, Rules, Side, Stars, Vec } from '@chess-battler/sim';
 import { getUnit } from '@chess-battler/content';
 
 export const CELL = 76;
 export const PAD = 10;
+/** Отступ между доской и скамейкой. */
+export const BENCH_GAP = 14;
 
-const SIDE_COLOR: Record<Side, number> = { A: 0x4da3ff, B: 0xff6b5b };
-const GLYPH: Record<Family, string> = {
+export const SIDE_COLOR: Record<Side, number> = { A: 0x4da3ff, B: 0xff6b5b };
+export const GLYPH: Record<Family, string> = {
   legion: '♟',
   riders: '♞',
   mystics: '♝',
   guards: '♜',
 };
 
+/** Данные для отрисовки фигуры: снимок боя или фигура забега. */
+export interface UnitLook {
+  readonly id: number;
+  readonly defId: string;
+  readonly side: Side;
+  readonly pos: Vec;
+  readonly hp: number;
+  readonly maxHp: number;
+  readonly stars: Stars;
+}
+
 export class UnitView extends Container {
   private readonly hpBar = new Graphics();
+  private readonly badge: Text;
   hp: number;
+  maxHp: number;
+  shield = 0;
   /** Логическая клетка фигуры (обновляется проигрывателем по событиям). */
   cell: Vec;
   /** Экранная позиция клетки, вокруг которой живут временные смещения. */
@@ -27,19 +43,17 @@ export class UnitView extends Container {
   /** Номер текущего сдвига: новый сдвиг отменяет предыдущий (каскад может их перекрыть). */
   slideToken = 0;
 
-  constructor(
-    readonly snap: UnitSnapshot,
-    readonly maxHp: number,
-  ) {
+  constructor(readonly look: UnitLook) {
     super();
-    const def = getUnit(snap.defId);
-    const color = SIDE_COLOR[snap.side];
+    const def = getUnit(look.defId);
+    const color = SIDE_COLOR[look.side];
     const r = CELL * 0.38;
 
     const body = new Graphics()
       .circle(0, 0, r)
       .fill({ color: 0x1d2029 })
-      .stroke({ color, width: 3 });
+      .stroke({ color, width: look.stars > 1 ? 4 : 3 });
+    if (look.stars === 3) body.circle(0, 0, r + 4).stroke({ color: 0xf2c14e, width: 2 });
     const glyph = new Text({
       text: GLYPH[def.family],
       style: { fontFamily: 'serif', fontSize: 34, fill: color },
@@ -51,12 +65,39 @@ export class UnitView extends Container {
     });
     label.anchor.set(0.5, 0);
     label.y = r * 0.35;
+    this.addChild(body, glyph, label);
 
+    if (look.stars > 1) {
+      const stars = new Text({
+        text: '★'.repeat(look.stars),
+        style: {
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: 12,
+          fill: 0xf2c14e,
+          stroke: { color: 0x000000, width: 3 },
+        },
+      });
+      stars.anchor.set(0.5, 0.5);
+      stars.y = -r - 1;
+      this.addChild(stars);
+    }
+
+    this.badge = new Text({
+      text: '',
+      style: { fontFamily: 'system-ui, sans-serif', fontSize: 16 },
+    });
+    this.badge.anchor.set(0.5);
+    this.badge.position.set(r * 0.85, -r * 0.75);
     this.hpBar.y = r + 4;
-    this.addChild(body, glyph, label, this.hpBar);
-    this.hp = snap.hp;
-    this.cell = snap.pos;
+    this.addChild(this.hpBar, this.badge);
+    this.hp = look.hp;
+    this.maxHp = look.maxHp;
+    this.cell = look.pos;
     this.drawHp();
+  }
+
+  get side(): Side {
+    return this.look.side;
   }
 
   /** Применяет base + смещения к позиции. */
@@ -68,22 +109,40 @@ export class UnitView extends Container {
     );
   }
 
-  setHp(hp: number): void {
+  setHp(hp: number, maxHp = this.maxHp): void {
     this.hp = hp;
+    this.maxHp = maxHp;
     this.drawHp();
   }
 
+  setShield(shield: number): void {
+    this.shield = Math.max(0, shield);
+    this.drawHp();
+  }
+
+  /** Значок состояния над фигурой (оглушение). */
+  setBadge(text: string): void {
+    if (!this.destroyed) this.badge.text = text;
+  }
+
   private drawHp(): void {
+    if (this.destroyed) return;
     const w = CELL * 0.7;
     const frac = Math.max(0, this.hp) / this.maxHp;
-    this.hpBar
+    const g = this.hpBar
       .clear()
       .rect(-w / 2, 0, w, 5)
       .fill({ color: 0x000000, alpha: 0.6 })
       .rect(-w / 2, 0, w * frac, 5)
       .fill({ color: frac > 0.5 ? 0x5ad17a : frac > 0.25 ? 0xf2c14e : 0xff5b5b });
+    if (this.shield > 0) {
+      const sw = Math.min(w, (w * this.shield) / this.maxHp);
+      g.rect(-w / 2, -3, sw, 3).fill({ color: 0x7fd8ff });
+    }
   }
 }
+
+export type UnitBinder = (v: UnitView) => void;
 
 /** Доска: клетки, подсветка, фигуры, слой эффектов. y=0 доски — внизу экрана (сторона A). */
 export class BoardView extends Container {
@@ -91,10 +150,13 @@ export class BoardView extends Container {
   readonly highlight = new Graphics();
   readonly unitLayer = new Container();
   readonly fxLayer = new Container();
+  private readonly enemyVeil = new Graphics();
   /** Фигура, для которой показаны клетки хода и атаки. */
   private focused: number | null = null;
   /** true — выбрана тапом (не сбрасывается при уходе курсора). */
   private pinned = false;
+  /** Вызывается при смене выбранной фигуры (для панели информации). */
+  onFocusChange: (v: UnitView | null) => void = () => {};
 
   constructor(readonly rules: Rules) {
     super();
@@ -115,7 +177,21 @@ export class BoardView extends Container {
     grid.eventMode = 'static';
     grid.hitArea = new Rectangle(0, 0, this.pixelWidth, this.pixelHeight);
     grid.on('pointertap', () => this.clearFocus());
-    this.addChild(grid, this.highlight, this.unitLayer, this.fxLayer);
+
+    // Затемнение половины соперника во время подготовки.
+    this.enemyVeil
+      .rect(PAD, PAD, this.cols * CELL, (this.rows / 2) * CELL)
+      .fill({ color: 0x14161c, alpha: 0.55 });
+    const veilText = new Text({
+      text: 'Соперник появится в бою',
+      style: { fontFamily: 'system-ui, sans-serif', fontSize: 15, fill: 0x8a8f9e },
+    });
+    veilText.anchor.set(0.5);
+    veilText.position.set(this.pixelWidth / 2, PAD + (this.rows / 4) * CELL);
+    this.enemyVeil.addChild(veilText);
+    this.enemyVeil.visible = false;
+
+    this.addChild(grid, this.enemyVeil, this.highlight, this.unitLayer, this.fxLayer);
   }
 
   get cols(): number {
@@ -134,6 +210,10 @@ export class BoardView extends Container {
     return this.rows * CELL + PAD * 2;
   }
 
+  set veiled(v: boolean) {
+    this.enemyVeil.visible = v;
+  }
+
   toScreen(p: Vec): { x: number; y: number } {
     return {
       x: PAD + p.x * CELL + CELL / 2,
@@ -141,18 +221,32 @@ export class BoardView extends Container {
     };
   }
 
-  setUnits(snaps: readonly UnitSnapshot[]): void {
+  /** Клетка доски под точкой (в координатах доски) или null. */
+  cellAt(x: number, y: number): Vec | null {
+    const cx = Math.floor((x - PAD) / CELL);
+    const cy = this.rows - 1 - Math.floor((y - PAD) / CELL);
+    return cx >= 0 && cx < this.cols && cy >= 0 && cy < this.rows ? { x: cx, y: cy } : null;
+  }
+
+  /**
+   * Пересоздать фигуры. binder — свои обработчики (подготовка);
+   * по умолчанию — подсветка по наведению/тапу (бой).
+   */
+  setUnits(looks: readonly UnitLook[], binder?: UnitBinder): void {
     for (const v of this.units.values()) v.destroy({ children: true });
     this.units.clear();
     this.fxLayer.removeChildren().forEach((c) => c.destroy());
-    for (const s of snaps) {
+    for (const s of looks) {
       if (s.hp <= 0) continue;
-      const v = new UnitView(s, s.maxHp);
+      const v = new UnitView(s);
       const p = this.toScreen(s.pos);
       v.base.x = p.x;
       v.base.y = p.y;
       v.sync();
-      this.bindUnit(v, s.id);
+      v.eventMode = 'static';
+      v.cursor = 'pointer';
+      v.hitArea = new Circle(0, 0, CELL * 0.45);
+      (binder ?? ((u) => this.bindHighlight(u)))(v);
       this.units.set(s.id, v);
       this.unitLayer.addChild(v);
     }
@@ -161,10 +255,8 @@ export class BoardView extends Container {
 
   // ---------- Подсветка хода и атаки ----------
 
-  private bindUnit(v: UnitView, id: number): void {
-    v.eventMode = 'static';
-    v.cursor = 'pointer';
-    v.hitArea = new Circle(0, 0, CELL * 0.45);
+  private bindHighlight(v: UnitView): void {
+    const id = v.look.id;
     // Наведение — только для мыши; на таче наведения нет, там работает тап.
     v.on('pointerover', (e) => {
       if (e.pointerType === 'mouse' && !this.pinned) this.focus(id);
@@ -172,25 +264,31 @@ export class BoardView extends Container {
     v.on('pointerout', (e) => {
       if (e.pointerType === 'mouse' && !this.pinned) this.clearFocus();
     });
-    v.on('pointertap', () => {
-      if (this.pinned && this.focused === id) {
-        this.clearFocus();
-      } else {
-        this.pinned = true;
-        this.focus(id);
-      }
-    });
+    v.on('pointertap', () => this.toggleFocus(id));
+  }
+
+  /** Тап по фигуре: выбрать или снять выбор. */
+  toggleFocus(id: number): void {
+    if (this.pinned && this.focused === id) {
+      this.clearFocus();
+    } else {
+      this.pinned = true;
+      this.focus(id);
+    }
   }
 
   focus(id: number): void {
     this.focused = id;
     this.refreshHighlight();
+    this.onFocusChange(this.units.get(id) ?? null);
   }
 
   clearFocus(): void {
+    const had = this.focused !== null;
     this.focused = null;
     this.pinned = false;
     this.highlight.clear();
+    if (had) this.onFocusChange(null);
   }
 
   /** Перерисовать подсветку по текущим клеткам фигур (вызывается после ходов и смертей). */
@@ -201,12 +299,12 @@ export class BoardView extends Container {
       this.clearFocus();
       return;
     }
-    const def = getUnit(v.snap.defId);
-    const side = v.snap.side;
+    const def = getUnit(v.look.defId);
+    const side = v.side;
     const others = [...this.units.values()].filter((u) => u !== v);
     const occupied = (p: Vec) => others.some((u) => u.cell.x === p.x && u.cell.y === p.y);
     const enemyAt = (p: Vec) =>
-      others.some((u) => u.snap.side !== side && u.cell.x === p.x && u.cell.y === p.y);
+      others.some((u) => u.side !== side && u.cell.x === p.x && u.cell.y === p.y);
 
     const g = this.highlight.clear();
     const half = CELL / 2;
@@ -227,5 +325,76 @@ export class BoardView extends Container {
         .fill({ color: 0xff3b3b, alpha: hit ? 0.35 : 0.16 })
         .stroke({ color: 0xff5b5b, width: 2, alpha: hit ? 0.95 : 0.5 });
     }
+  }
+}
+
+/** Скамейка под доской: слоты в ряд. */
+export class BenchView extends Container {
+  readonly units = new Map<number, UnitView>();
+  private readonly slotsG = new Graphics();
+  private readonly title: Text;
+
+  constructor(
+    readonly slots: number,
+    private readonly areaWidth: number,
+  ) {
+    super();
+    this.title = new Text({
+      text: 'Скамейка',
+      style: { fontFamily: 'system-ui, sans-serif', fontSize: 11, fill: 0x8a8f9e },
+    });
+    this.title.position.set(PAD, 0);
+    this.addChild(this.slotsG, this.title);
+    this.draw(-1);
+  }
+
+  get pixelHeight(): number {
+    return CELL + 18;
+  }
+
+  slotCenter(i: number): { x: number; y: number } {
+    const total = this.slots * CELL + (this.slots - 1) * 8;
+    const x0 = (this.areaWidth - total) / 2;
+    return { x: x0 + i * (CELL + 8) + CELL / 2, y: 16 + CELL / 2 };
+  }
+
+  /** Индекс слота под точкой (в координатах скамейки) или null. */
+  slotAt(x: number, y: number): number | null {
+    for (let i = 0; i < this.slots; i++) {
+      const c = this.slotCenter(i);
+      if (Math.abs(x - c.x) <= CELL / 2 + 4 && Math.abs(y - c.y) <= CELL / 2 + 4) return i;
+    }
+    return null;
+  }
+
+  /** hovered — слот, над которым тащат фигуру (-1 — нет). */
+  draw(hovered: number): void {
+    this.slotsG.clear();
+    for (let i = 0; i < this.slots; i++) {
+      const c = this.slotCenter(i);
+      this.slotsG
+        .roundRect(c.x - CELL / 2, c.y - CELL / 2, CELL, CELL, 10)
+        .fill({ color: i === hovered ? 0x2f3a4f : 0x1d2029 })
+        .stroke({ color: 0xffffff, alpha: i === hovered ? 0.4 : 0.08, width: 1 });
+    }
+  }
+
+  setUnits(looks: readonly (UnitLook | null)[], binder: UnitBinder): void {
+    for (const v of this.units.values()) v.destroy({ children: true });
+    this.units.clear();
+    looks.forEach((look, i) => {
+      if (!look) return;
+      const v = new UnitView(look);
+      const c = this.slotCenter(i);
+      v.base.x = c.x;
+      v.base.y = c.y;
+      v.sync();
+      v.eventMode = 'static';
+      v.cursor = 'grab';
+      v.hitArea = new Circle(0, 0, CELL * 0.45);
+      binder(v);
+      this.units.set(look.id, v);
+      this.addChild(v);
+    });
   }
 }

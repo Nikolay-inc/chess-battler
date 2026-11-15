@@ -8,24 +8,42 @@
     />
     <meta name="theme-color" content="#14161c" />
     <title>Chess Battler</title>
-    <link rel="stylesheet" href="/src/style.css" />
   </head>
-  <body>
+  <body data-phase="prep">
     <main class="app">
-      <header class="bar">
-        <span class="army army-b" id="army-b"></span>
-        <span class="tick" id="tick">Такт 0</span>
+      <header class="hud" id="hud">
+        <span class="hud-round"></span>
+        <span class="hud-lives" aria-label="Жизни"></span>
+        <span class="hud-wins"></span>
+        <span class="hud-gold" aria-label="Золото"></span>
+        <button
+          class="hud-menu"
+          id="new-run"
+          type="button"
+          aria-label="Новый забег"
+          title="Новый забег"
+        >
+          ↺
+        </button>
       </header>
-      <div class="stage" id="stage"></div>
-      <div class="bar">
-        <span class="army army-a" id="army-a"></span>
+      <div class="synergies" id="synergies"></div>
+      <div class="battle-bar">
+        <span class="tick" id="tick">Начало боя</span>
       </div>
-      <footer class="controls">
+      <div class="stage" id="stage"></div>
+      <section class="shop" id="shop" aria-label="Магазин"></section>
+      <footer class="controls prep-controls">
+        <button class="reroll" id="reroll" type="button">Переброс · 1</button>
+        <button class="freeze" id="freeze" type="button" aria-pressed="false">❄</button>
+        <button class="fight" id="fight" type="button">В бой</button>
+      </footer>
+      <footer class="controls battle-controls">
         <button class="speed" id="speed" type="button" aria-label="Скорость">×1</button>
         <button class="skip" id="skip" type="button" disabled>Пропустить</button>
-        <button class="fight" id="fight" type="button">Бой</button>
       </footer>
-      <section class="result" id="result" role="dialog" aria-label="Итог боя" hidden></section>
+      <aside class="info" id="info" hidden></aside>
+      <section class="result" id="result" role="dialog" aria-label="Итог" hidden></section>
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
     </main>
     <script type="module" src="/src/main.ts"></script>
   </body>

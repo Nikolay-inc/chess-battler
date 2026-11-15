@@ -5,7 +5,7 @@ import { getUnit } from '@chess-battler/content';
 /** Сторона игрока: пока игрок всегда снизу. */
 export const PLAYER_SIDE: Side = 'A';
 
-const plural = (n: number, one: string, few: string, many: string): string => {
+export const plural = (n: number, one: string, few: string, many: string): string => {
   const m10 = n % 10;
   const m100 = n % 100;
   if (m10 === 1 && m100 !== 11) return one;
@@ -22,13 +22,38 @@ export function describeMoment(m: BattleMoment, unitName: (id: number) => string
   return `${unitName(m.unit)} → ${unitName(m.target)}: ${parts.join(', ')}`;
 }
 
-export interface ResultActions {
-  onReplay(): void;
-  onClose(): void;
+export interface ResultButton {
+  readonly label: string;
+  readonly primary?: boolean;
+  onClick(): void;
 }
 
-/** Заполняет карточку итога. Игрок — сторона PLAYER_SIDE. */
-export function renderResult(root: HTMLElement, r: BattleResult, actions: ResultActions): void {
+export interface ResultOptions {
+  readonly buttons: readonly ResultButton[];
+  /** Строка под статистикой (например, жизни и победы забега). */
+  readonly footer?: string;
+}
+
+const el = (tag: string, cls: string, text?: string) => {
+  const e = document.createElement(tag);
+  e.className = cls;
+  if (text !== undefined) e.textContent = text;
+  return e;
+};
+
+function appendButtons(root: HTMLElement, buttons: readonly ResultButton[]): void {
+  const row = el('div', 'result-buttons');
+  for (const b of buttons) {
+    const btn = el('button', b.primary ? 'fight' : 'secondary', b.label) as HTMLButtonElement;
+    btn.type = 'button';
+    btn.addEventListener('click', b.onClick);
+    row.append(btn);
+  }
+  root.append(row);
+}
+
+/** Заполняет карточку итога боя. Игрок — сторона PLAYER_SIDE. */
+export function renderResult(root: HTMLElement, r: BattleResult, opts: ResultOptions): void {
   const summary = analyzeBattle(r, PLAYER_SIDE);
   const best = summary.best ?? analyzeBattle(r).best;
   const enemy: Side = PLAYER_SIDE === 'A' ? 'B' : 'A';
@@ -45,13 +70,6 @@ export function renderResult(root: HTMLElement, r: BattleResult, actions: Result
   const unitName = (id: number) => getUnit(r.initial[id]!.defId).name;
   const mine = summary.survivors[PLAYER_SIDE];
   const theirs = summary.survivors[enemy];
-
-  const el = (tag: string, cls: string, text?: string) => {
-    const e = document.createElement(tag);
-    e.className = cls;
-    if (text !== undefined) e.textContent = text;
-    return e;
-  };
 
   root.replaceChildren();
   root.dataset.outcome = outcome;
@@ -80,13 +98,38 @@ export function renderResult(root: HTMLElement, r: BattleResult, actions: Result
     root.append(moment);
   }
 
-  const buttons = el('div', 'result-buttons');
-  const close = el('button', 'secondary', 'К доске') as HTMLButtonElement;
-  const replay = el('button', 'fight', 'Ещё раз') as HTMLButtonElement;
-  close.type = replay.type = 'button';
-  close.addEventListener('click', actions.onClose);
-  replay.addEventListener('click', actions.onReplay);
-  buttons.append(close, replay);
-  root.append(buttons);
+  if (opts.footer) root.append(el('p', 'result-footer', opts.footer));
+  appendButtons(root, opts.buttons);
+  root.hidden = false;
+}
+
+export interface RunEndInfo {
+  readonly won: boolean;
+  readonly wins: number;
+  readonly losses: number;
+  readonly rounds: number;
+}
+
+/** Экран конца забега. */
+export function renderRunEnd(root: HTMLElement, info: RunEndInfo, onNewRun: () => void): void {
+  root.replaceChildren();
+  root.dataset.outcome = info.won ? 'win' : 'loss';
+  root.append(
+    el('h2', 'result-title', info.won ? 'Забег пройден!' : 'Забег окончен'),
+    el('p', 'result-reason', info.won ? 'Десять побед — армия непобедима' : 'Жизни закончились'),
+  );
+  const stats = el('div', 'result-stats');
+  const stat = (value: string, label: string) => {
+    const s = el('div', 'stat');
+    s.append(el('strong', '', value), el('span', '', label));
+    return s;
+  };
+  stats.append(
+    stat(String(info.wins), plural(info.wins, 'победа', 'победы', 'побед')),
+    stat(String(info.losses), plural(info.losses, 'поражение', 'поражения', 'поражений')),
+    stat(String(info.rounds), plural(info.rounds, 'раунд', 'раунда', 'раундов')),
+  );
+  root.append(stats);
+  appendButtons(root, [{ label: 'Новый забег', primary: true, onClick: onNewRun }]);
   root.hidden = false;
 }

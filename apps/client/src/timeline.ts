@@ -10,7 +10,14 @@ export interface TickGroup {
   readonly actions: readonly ActionGroup[];
 }
 
-/** Разбивает плоский лог боя на такты и действия — единицы для анимации и темпа. */
+/** События, с которых начинается действие фигуры. */
+const ACTION_START = new Set<BattleEvent['type']>(['attack', 'move', 'support', 'stunned']);
+
+/**
+ * Разбивает плоский лог боя на такты и действия — единицы для анимации и темпа.
+ * События до первого такта (начало боя: Клич, Предвидение) — такт 0.
+ * События начала такта до первого действия (Благословение) — отдельное действие.
+ */
 export function groupByTick(events: readonly BattleEvent[]): TickGroup[] {
   const ticks: { tick: number; actions: BattleEvent[][] }[] = [];
   for (const e of events) {
@@ -19,9 +26,9 @@ export function groupByTick(events: readonly BattleEvent[]): TickGroup[] {
       continue;
     }
     if (e.type === 'end') continue;
-    const current = ticks.at(-1);
-    if (!current) continue;
-    if (e.type === 'attack' || e.type === 'move' || current.actions.length === 0) {
+    if (ticks.length === 0) ticks.push({ tick: 0, actions: [] });
+    const current = ticks.at(-1)!;
+    if (ACTION_START.has(e.type) || current.actions.length === 0) {
       current.actions.push([e]);
     } else {
       current.actions.at(-1)!.push(e);
@@ -37,6 +44,9 @@ export function involvedUnits(action: ActionGroup): number[] {
     if ('unit' in e) ids.add(e.unit);
     if (e.type === 'attack') ids.add(e.target);
     if (e.type === 'collision' && e.other !== null) ids.add(e.other);
+    if ((e.type === 'heal' || e.type === 'shield' || e.type === 'buff') && e.by !== null) {
+      ids.add(e.by);
+    }
   }
   return [...ids];
 }
