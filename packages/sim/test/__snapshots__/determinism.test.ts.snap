@@ -1,0 +1,11 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`детерминизм > golden: лог эталонного боя не изменился 1`] = `
+{
+  "events": 164,
+  "fingerprint": "11a025a0",
+  "reason": "elimination",
+  "ticks": 10,
+  "winner": "A",
+}
+`;
