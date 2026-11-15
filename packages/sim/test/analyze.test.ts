@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { analyzeBattle, battleMoments, scoreMoment, simulate } from '../src';
+import { DEFAULT_RULES, analyzeBattle, battleMoments, scoreMoment, simulate } from '../src';
 import { at, dummy, striker } from './helpers';
 
 describe('итоги боя', () => {
@@ -39,14 +39,19 @@ describe('итоги боя', () => {
   });
 
   it('лучший момент выбирается по очкам и фильтруется по стороне', () => {
-    const r = simulate({
-      units: [
-        at(striker({ atk: 1, push: 0 }), 'A', 0, 1),
-        at(dummy(), 'B', 0, 2),
-        at(striker({ atk: 5, push: 0, initiative: 9 }), 'B', 4, 3),
-        at(dummy(), 'A', 4, 2),
-      ],
-    });
+    // Без Бури: иначе поздние удары растут и сравнение по очкам теряет смысл.
+    const noStorm = { ...DEFAULT_RULES, storm: null };
+    const r = simulate(
+      {
+        units: [
+          at(striker({ atk: 1, push: 0 }), 'A', 0, 1),
+          at(dummy(), 'B', 0, 2),
+          at(striker({ atk: 5, push: 0, initiative: 9 }), 'B', 4, 3),
+          at(dummy(), 'A', 4, 2),
+        ],
+      },
+      noStorm,
+    );
     expect(analyzeBattle(r).best).toMatchObject({ side: 'B', damage: 5 });
     expect(analyzeBattle(r, 'A').best).toMatchObject({ side: 'A', damage: 1 });
   });

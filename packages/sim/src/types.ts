@@ -152,6 +152,11 @@ export interface Rules {
   /** Урон каждому участнику столкновения (с фигурой или краем). */
   readonly collisionDamage: number;
   readonly stars: StarScaling;
+  /**
+   * «Буря» против затягивания: с такта startTick в начале каждого такта все фигуры
+   * получают ещё +atkPerTick ATK (накапливается: +1, +2, +3…). null — без Бури.
+   */
+  readonly storm: { readonly startTick: number; readonly atkPerTick: number } | null;
 }
 
 export const DEFAULT_RULES: Rules = {
@@ -164,6 +169,7 @@ export const DEFAULT_RULES: Rules = {
     atk: [10, 16, 25],
     ability: [10, 15, 20],
   },
+  storm: { startTick: 15, atkPerTick: 1 },
 };
 
 /** Снимок фигуры для лога и клиента. */
@@ -239,6 +245,8 @@ export type BattleEvent =
   | { readonly type: 'stunned'; readonly unit: number }
   /** Броня цели снижена проклятием. */
   | { readonly type: 'curse'; readonly unit: number; readonly armor: number }
+  /** «Буря»: в начале такта все фигуры получили ещё ATK; atk — суммарная прибавка Бури. */
+  | { readonly type: 'storm'; readonly tick: number; readonly atk: number }
   /** Повышение Легиона: +HP, +ATK, новый шаблон атаки. */
   | { readonly type: 'promote'; readonly unit: number; readonly hp: number }
   | {

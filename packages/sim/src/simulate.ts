@@ -272,6 +272,12 @@ class Battle {
   }
 
   private tickStart(): void {
+    const storm = this.rules.storm;
+    if (storm && this.tick >= storm.startTick) {
+      for (const u of this.alive()) u.atkBonus += storm.atkPerTick;
+      const total = (this.tick - storm.startTick + 1) * storm.atkPerTick;
+      this.events.push({ type: 'storm', tick: this.tick, atk: total });
+    }
     this.computeAuras();
     for (const u of this.alive()) {
       const heal = this.synergy(u, 'periodicHeal');
@@ -336,6 +342,9 @@ class Battle {
       this.healAround(u);
       return;
     }
+    // Под ударом врага фигура держит позицию: иначе выходит бесконечная погоня, когда
+    // разные шаблоны атаки (например, ладья и слон) не дают никому закончить ход на ударной клетке.
+    if (this.threatened(u)) return;
     const dest = this.pickMove(u);
     if (dest) {
       const from = u.pos;
@@ -344,6 +353,11 @@ class Battle {
       const breakthrough = this.synergy(u, 'breakthrough');
       if (breakthrough) this.breakthrough(u, breakthrough.power);
     }
+  }
+
+  /** Может ли какой-то враг ударить u со своей текущей клетки. */
+  private threatened(u: Unit): boolean {
+    return this.alive(other(u.side)).some((e) => this.enemiesInReach(e, e.pos).includes(u));
   }
 
   /** Враги, по которым u может ударить с клетки from. */
@@ -383,13 +397,21 @@ class Battle {
   }
 
   /**
-   * Выбор хода: клетка с минимальным числом ходов до позиции атаки (BFS по текущей доске).
-   * Если пути нет — клетка, строго уменьшающая манхэттен до ближайшего врага. Иначе — ждать.
+   * Выбор хода: клетка, с которой фигура быстрее всего (в ходах своего шаблона, BFS по
+   * текущей доске) сможет ударить врага; расстояние 0 — ударит уже на следующем такте.
+   * Если реального пути нет (закрыли свои) — оценка, где свои считаются проходимыми:
+   * фигура выдвигается к проходу, только если это её приближает, иначе ждёт (без метаний).
+   * Если пути нет и сквозь своих — клетка, строго уменьшающая манхэттен до ближайшего врага.
    */
   private pickMove(u: Unit): Vec | null {
     const occupied = (p: Vec) => {
       const o = this.at(p);
       return o !== null && o !== u;
+    };
+    // Для оценки пути свои фигуры проходимы: к следующему такту они обычно уходят.
+    const enemyAt = (p: Vec) => {
+      const o = this.at(p);
+      return o !== null && o !== u && o.side !== u.side;
     };
     const dests = moveTargets(u.def.move, u.pos, u.side, this.rules, occupied);
     if (dests.length === 0) return null;
@@ -407,14 +429,14 @@ class Battle {
       }
       return v;
     };
-    const distance = (start: Vec): number => {
+    const distance = (start: Vec, blocked: (p: Vec) => boolean): number => {
       const seen = new Set<number>([this.index(start)]);
       let frontier = [start];
       for (let d = 0; frontier.length > 0; d++) {
         const next: Vec[] = [];
         for (const p of frontier) {
           if (isGoal(p)) return d;
-          for (const n of moveTargets(u.def.move, p, u.side, this.rules, occupied)) {
+          for (const n of moveTargets(u.def.move, p, u.side, this.rules, blocked)) {
             const k = this.index(n);
             if (!seen.has(k)) {
               seen.add(k);
@@ -426,22 +448,32 @@ class Battle {
       }
       return Infinity;
     };
-
-    let best: Vec | null = null;
-    let bestDist = Infinity;
-    let bestNear = Infinity;
-    for (const p of dests) {
-      const d = distance(p);
-      const n = nearest(p);
-      if (d < bestDist || (d === bestDist && n < bestNear)) {
-        best = p;
-        bestDist = d;
-        bestNear = n;
+    /** Лучшая клетка хода по расстоянию (при равенстве — ближе к врагу, затем порядок шаблона). */
+    const bestBy = (blocked: (p: Vec) => boolean) => {
+      let best: Vec | null = null;
+      let bestDist = Infinity;
+      let bestNear = Infinity;
+      for (const p of dests) {
+        const d = distance(p, blocked);
+        const n = nearest(p);
+        if (d < bestDist || (d === bestDist && n < bestNear)) {
+          best = p;
+          bestDist = d;
+          bestNear = n;
+        }
       }
-    }
-    if (bestDist !== Infinity) return best;
-    // Пути до позиции атаки нет — просто сближаемся, если это возможно.
-    return bestNear < nearest(u.pos) ? best : null;
+      return { best, bestDist, bestNear };
+    };
+
+    const real = bestBy(occupied);
+    if (real.bestDist !== Infinity) return real.best;
+    const through = bestBy(enemyAt);
+    const here = distance(u.pos, enemyAt);
+    if (through.bestDist < here) return through.best;
+    // Путь сквозь своих есть, но шаг его не сокращает — ждём, пока проход освободится.
+    if (here !== Infinity) return null;
+    // Пути до позиции атаки нет вовсе — просто сближаемся, если это возможно.
+    return real.bestNear < nearest(u.pos) ? real.best : null;
   }
 
   // ---------- Атака ----------

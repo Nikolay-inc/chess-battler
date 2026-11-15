@@ -91,6 +91,18 @@ describe('выбор действия', () => {
     });
   });
 
+  it('путь закрыли свои: выдвигается к проходу один раз и ждёт, без метаний', () => {
+    // Сплошная стена своих неподвижных фигур в ряду 1; пешка за ней, враг впереди.
+    const wall = [0, 1, 2, 3, 4].map((x) => at(dummy(), 'A', x, 1));
+    const r = simulate({ units: [...wall, at(pawn, 'A', 2, 0), at(dummy(), 'B', 2, 4)] });
+    const pawnId = r.initial.find((u) => u.defId === 'pawn')!.id;
+    const moves = r.events.filter((e) => e.type === 'move' && e.unit === pawnId);
+    // Реального пути нет; через своих ближе всего из (1,0) — туда и встаёт, дальше ждёт.
+    expect(moves).toEqual([
+      { type: 'move', unit: pawnId, from: { x: 2, y: 0 }, to: { x: 1, y: 0 } },
+    ]);
+  });
+
   it('если подойти нельзя, фигура ждёт', () => {
     const stuck = def({ id: 'stuck', move: steps([FORWARD]), attack: steps([FORWARD]), atk: 1 });
     // Впереди своя фигура — двигаться некуда.

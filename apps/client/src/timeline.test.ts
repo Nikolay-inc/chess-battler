@@ -30,6 +30,7 @@ describe('groupByTick: новые события', () => {
       { type: 'shield', unit: 0, amount: 6, by: 1 },
       { type: 'buff', unit: 2, stat: 'atk', amount: 1, by: 2 },
       { type: 'tick', tick: 1 },
+      { type: 'storm', tick: 1, atk: 1 },
       { type: 'heal', unit: 0, amount: 2, hp: 9, by: 1 },
       { type: 'stunned', unit: 3 },
       { type: 'support', unit: 1 },
@@ -40,7 +41,7 @@ describe('groupByTick: новые события', () => {
     expect(ticks.map((t) => t.tick)).toEqual([0, 1]);
     expect(ticks[0]!.actions).toHaveLength(1);
     expect(ticks[1]!.actions.map((a) => a.events.map((e) => e.type))).toEqual([
-      ['heal'],
+      ['storm', 'heal'],
       ['stunned'],
       ['support', 'heal'],
       ['move'],

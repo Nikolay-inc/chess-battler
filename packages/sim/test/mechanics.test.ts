@@ -244,3 +244,26 @@ describe('battleStart и ауры', () => {
     ]);
   });
 });
+
+describe('Буря', () => {
+  it('с такта startTick каждый такт все фигуры получают ещё +ATK (накапливается)', () => {
+    const rules = { ...DEFAULT_RULES, storm: { startTick: 3, atkPerTick: 1 } };
+    const r = simulate(
+      { units: [at(striker({ push: 0 }), 'A', 2, 1), at(dummy(), 'B', 2, 2)] },
+      rules,
+    );
+    const dmg = (t: number) => ofType(eventsOfTick(r, t), 'damage')[0]!.amount;
+    expect([dmg(1), dmg(2), dmg(3), dmg(4), dmg(5)]).toEqual([1, 1, 2, 3, 4]);
+    expect(ofType(eventsOfTick(r, 4), 'storm')).toEqual([{ type: 'storm', tick: 4, atk: 2 }]);
+    expect(ofType(eventsOfTick(r, 2), 'storm')).toEqual([]);
+  });
+
+  it('по умолчанию начинается с 15-го такта; null — выключена', () => {
+    expect(DEFAULT_RULES.storm).toEqual({ startTick: 15, atkPerTick: 1 });
+    const r = simulate(
+      { units: [at(dummy(), 'A', 0, 0), at(dummy(), 'B', 4, 5)] },
+      { ...DEFAULT_RULES, storm: null },
+    );
+    expect(ofType(r.events, 'storm')).toEqual([]);
+  });
+});

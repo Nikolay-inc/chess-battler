@@ -25,6 +25,7 @@ const COLOR = {
   curse: 0xc07bff,
   promote: 0xf2c14e,
   thorns: 0xff8a65,
+  storm: 0xb57bff,
 } as const;
 
 const BUFF_LABEL: Record<BuffStat, string> = {
@@ -42,6 +43,7 @@ const MS = {
   floatText: 650,
   push: 160,
   arrow: 380,
+  storm: 450,
   shockwave: 420,
   collision: 200,
   death: 260,
@@ -136,6 +138,8 @@ export class BattlePlayer {
         return this.status(e.unit, `Проклятие: броня ${e.armor}`, COLOR.curse, 60);
       case 'promote':
         return this.promote(e.unit, e.hp);
+      case 'storm':
+        return this.storm(e.atk);
       case 'collision':
         this.chain(e.unit, e.depth, ctx);
         return this.collision(e.unit, e.other, e.at);
@@ -346,6 +350,20 @@ export class BattlePlayer {
       ring.alpha = 1 - t;
     });
     if (!ring.destroyed) ring.destroy();
+  }
+
+  /** «Буря»: вспышка на всё поле и надпись с суммарной прибавкой ATK. */
+  private async storm(atk: number): Promise<void> {
+    const b = this.board;
+    const flash = new Graphics()
+      .rect(0, 0, b.pixelWidth, b.pixelHeight)
+      .fill({ color: COLOR.storm, alpha: 0.28 });
+    b.fxLayer.addChild(flash);
+    this.floatText(`Буря: +${atk} ATK`, b.pixelWidth / 2, b.pixelHeight / 2, COLOR.storm, 26);
+    await this.tw.run(MS.storm, (t) => {
+      if (!flash.destroyed) flash.alpha = 1 - t;
+    });
+    if (!flash.destroyed) flash.destroy();
   }
 
   private async promote(id: number, hp: number): Promise<void> {
