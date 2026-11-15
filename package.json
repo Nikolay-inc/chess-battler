@@ -1,0 +1,35 @@
+{
+  "name": "chess-battler",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.15.5",
+  "engines": {
+    "node": ">=20.12"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @chess-battler/client dev",
+    "build": "pnpm -r --if-present build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "pnpm -r typecheck",
+    "check": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "eslint": "^9.39.5",
+    "globals": "^16",
+    "prettier": "^3.10.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.72.2",
+    "vite": "^6.4.6",
+    "vitest": "^3.2.7"
+  },
+  "pnpm": {
+    "overrides": {
+      "vite": "^6.4.6"
+    }
+  }
+}
