@@ -28,11 +28,24 @@ async function main(): Promise<void> {
     resolution: Math.min(window.devicePixelRatio || 1, 3),
     autoDensity: true,
   });
-  // autoDensity ставит ширину в px — растягиваем по контейнеру, сохраняя пропорции.
-  app.canvas.style.width = '100%';
-  app.canvas.style.height = 'auto';
-  app.canvas.style.aspectRatio = `${app.screen.width} / ${app.screen.height}`;
-  $('stage').appendChild(app.canvas);
+  // Canvas вписывается в свободную область (ширина и высота) с сохранением пропорций:
+  // на невысоких экранах поле уже, но страница не прокручивается.
+  const stage = $('stage');
+  stage.appendChild(app.canvas);
+  const ratio = app.screen.width / app.screen.height;
+  const fitCanvas = () => {
+    const r = stage.getBoundingClientRect();
+    let w = r.width;
+    let h = w / ratio;
+    if (h > r.height) {
+      h = r.height;
+      w = h * ratio;
+    }
+    app.canvas.style.width = `${Math.floor(w)}px`;
+    app.canvas.style.height = `${Math.floor(h)}px`;
+  };
+  new ResizeObserver(fitCanvas).observe(stage);
+  fitCanvas();
   app.stage.addChild(board, bench);
 
   let speedIdx = 0;
