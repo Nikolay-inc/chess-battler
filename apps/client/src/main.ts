@@ -6,6 +6,7 @@ import { BENCH_GAP, BenchView, BoardView } from './board-view';
 import { Game } from './game';
 import { BattlePlayer } from './player';
 import { Tweener } from './tween';
+import { loadRun, saveRun } from './storage';
 import { $ } from './ui';
 import './style.css';
 
@@ -50,13 +51,17 @@ async function main(): Promise<void> {
     player.skip();
   });
 
-  const initial: RunState = createRun(crypto.getRandomValues(new Uint32Array(1))[0]!, RUN_CONFIG);
+  // Продолжаем сохранённый забег, если он есть.
+  const saved = loadRun(RUN_CONFIG);
+  const initial: RunState =
+    saved ?? createRun(crypto.getRandomValues(new Uint32Array(1))[0]!, RUN_CONFIG);
   const game = new Game(app, board, bench, player, initial, {
-    save: () => {},
+    save: saveRun,
     onRunStart: () => {},
     onRoundEnd: () => {},
     onRunEnd: () => {},
   });
+  if (!saved) saveRun(initial);
   game.start();
 
   // Отладочный доступ в dev-сборке: ручная прокрутка тикера, замеры темпа.
