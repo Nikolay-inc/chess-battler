@@ -66,6 +66,8 @@ export interface GameHooks {
   onRunEnd(state: RunState): void;
   /** Ответ на опрос в конце забега. */
   onFeedback(state: RunState, rating: number, annoyed: string): void;
+  /** Перед каждым боем (например, выставить скорость по умолчанию). */
+  onBattleStart(): void;
 }
 
 export class Game {
@@ -127,6 +129,11 @@ export class Game {
 
   get current(): RunState {
     return this.state;
+  }
+
+  /** Вход на экран забега: перерисовать, если не идёт бой (бой продолжает играть сам). */
+  enter(): void {
+    if (!this.inBattle) this.start();
   }
 
   /** Показать текущее состояние (после загрузки или нового забега). */
@@ -243,6 +250,7 @@ export class Game {
     if (after.status !== 'shop') this.hooks.onRunEnd(after);
 
     document.body.dataset.phase = 'battle';
+    this.hooks.onBattleStart();
     this.board.veiled = false;
     this.bench.alpha = 0.35;
     $<HTMLButtonElement>('skip').disabled = false;

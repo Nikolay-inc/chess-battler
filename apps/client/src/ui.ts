@@ -126,6 +126,8 @@ function patternGrid(def: UnitDef): HTMLElement {
 }
 
 export interface UnitCardOptions {
+  /** Переключатель ★1/★2/★3 (справочник в коллекции). */
+  readonly pickStars?: boolean;
   /** Сколько вернёт продажа (фигура игрока) или null. */
   readonly sell?: number | null;
   /** Покупка из магазина. */
@@ -152,6 +154,20 @@ export function showUnitCard(
   close.setAttribute('aria-label', 'Закрыть');
   close.addEventListener('click', () => hideInfo(root));
   head.append(close);
+  if (opts.pickStars) {
+    const pick = el('div', 'segmented star-pick');
+    pick.setAttribute('role', 'tablist');
+    pick.setAttribute('aria-label', 'Уровень звёзд');
+    for (const n of [1, 2, 3] as const) {
+      const b = el('button', '', '★'.repeat(n));
+      b.type = 'button';
+      b.setAttribute('role', 'tab');
+      b.setAttribute('aria-selected', String(n === stars));
+      b.addEventListener('click', () => showUnitCard(root, unitId, n, opts));
+      pick.append(b);
+    }
+    head.append(pick);
+  }
 
   const stats = el('div', 'info-stats');
   const stat = (k: string, v: number | string) => {

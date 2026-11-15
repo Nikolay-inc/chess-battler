@@ -8,8 +8,16 @@ import { BENCH_GAP, BenchView, BoardView } from './board-view';
 import { Game } from './game';
 import { BattlePlayer } from './player';
 import { Tweener } from './tween';
+import { Router } from './router';
+import type { Route } from './router';
+import { CollectionScreen } from './screens/collection';
+import { renderHome } from './screens/home';
+import { renderProfile } from './screens/profile';
+import { renderSettings } from './screens/settings';
+import { renderStore } from './screens/store';
+import { SettingsStore } from './settings';
 import { loadRun, saveRun } from './storage';
-import { $ } from './ui';
+import { $, hideInfo } from './ui';
 import { version } from '../package.json';
 import { applyTokens, px } from './theme/tokens';
 import './style.css';
@@ -52,7 +60,8 @@ async function main(): Promise<void> {
   fitCanvas();
   app.stage.addChild(board, bench);
 
-  let speedIdx = 0;
+  const settings = new SettingsStore();
+  let speedIdx = SPEEDS.indexOf(settings.current.speed);
   const tweener = new Tweener(app.ticker, () => SPEEDS[speedIdx]!);
   const tickEl = $('tick');
   const player = new BattlePlayer(board, tweener, (tick) => {
@@ -60,6 +69,7 @@ async function main(): Promise<void> {
   });
 
   const speedBtn = $<HTMLButtonElement>('speed');
+  speedBtn.textContent = `×${SPEEDS[speedIdx]}`;
   speedBtn.addEventListener('click', () => {
     speedIdx = (speedIdx + 1) % SPEEDS.length;
     speedBtn.textContent = `×${SPEEDS[speedIdx]}`;
@@ -75,7 +85,8 @@ async function main(): Promise<void> {
   // Превью-деплои Vercel помечены и не пишут аналитику, чтобы не смешивать с тестерами.
   const deployEnv = import.meta.env.VITE_DEPLOY_ENV || 'production';
   const isPreview = deployEnv !== 'production';
-  $('version').textContent = `v${version} · ${build}${isPreview ? ` · ${deployEnv}` : ''}`;
+  const versionText = `v${version} · ${build}${isPreview ? ` · ${deployEnv}` : ''}`;
+  $('version').textContent = versionText;
 
   // Аналитика: в проде отправляется в Supabase, в dev — только в консоль.
   const analytics = new Analytics({
@@ -123,6 +134,11 @@ async function main(): Promise<void> {
       analytics.send('run_feedback', feedbackRow(s, rating, annoyed));
       void analytics.flush();
     },
+    // Каждый бой начинается со скорости по умолчанию из настроек.
+    onBattleStart: () => {
+      speedIdx = Math.max(0, SPEEDS.indexOf(settings.current.speed));
+      speedBtn.textContent = `×${SPEEDS[speedIdx]}`;
+    },
   });
   if (!saved) {
     saveRun(initial);
@@ -130,9 +146,45 @@ async function main(): Promise<void> {
   }
   game.start();
 
+  // ---------- Навигация ----------
+  const router = new Router();
+  const collection = new CollectionScreen();
+  const show: Record<Route, () => void> = {
+    home: () =>
+      renderHome(game.current, RUN_CONFIG, {
+        onPlay: () => router.go('play'),
+        onNewRun: () => {
+          game.newRun();
+          router.go('play');
+        },
+      }),
+    play: () => {
+      // Пока экран был скрыт, поле имело размер 0 — пересчитать сразу, не ждать ResizeObserver.
+      fitCanvas();
+      game.enter();
+    },
+    collection: () => collection.show(),
+    shop: () => renderStore(),
+    profile: () => renderProfile(),
+    settings: () => renderSettings(settings, versionText),
+  };
+  router.onChange((route) => {
+    document.body.dataset.route = route;
+    hideInfo($('info'));
+    for (const tab of document.querySelectorAll<HTMLElement>('.tab')) {
+      if (tab.dataset.route === route) tab.setAttribute('aria-current', 'page');
+      else tab.removeAttribute('aria-current');
+    }
+    show[route]();
+  });
+  $('play-back').addEventListener('click', () => router.go('home'));
+  router.sync();
+
   // Отладочный доступ в dev-сборке: ручная прокрутка тикера, замеры темпа.
   if (import.meta.env.DEV)
-    Object.assign(window, { __debug: { app, player, game, board, bench, analytics } });
+    Object.assign(window, {
+      __debug: { app, player, game, board, bench, analytics, router, settings },
+    });
 }
 
 void main();

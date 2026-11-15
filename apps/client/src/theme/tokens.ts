@@ -111,4 +111,5 @@ export function cssVariables(): Record<string, string> {
 /** Записать токены в CSS-переменные корня документа (до первой отрисовки). */
 export function applyTokens(root: HTMLElement = document.documentElement): void {
   for (const [k, v] of Object.entries(cssVariables())) root.style.setProperty(k, v);
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', tokens.color.bg);
 }
