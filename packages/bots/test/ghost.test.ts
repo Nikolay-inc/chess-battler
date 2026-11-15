@@ -12,7 +12,7 @@ describe('армия-призрак', () => {
   });
 
   it('заполняет поле до лимита раунда и стоит на своих рядах', () => {
-    for (const round of [1, 3, 6, 10]) {
+    for (const round of [3, 6, 10]) {
       const g = generateGhost({ round, difficulty: 0.8, seed: round * 7 });
       expect(g.army.length).toBe(boardCap(round, RUN_CONFIG));
       for (const s of g.army) {
@@ -22,6 +22,22 @@ describe('армия-призрак', () => {
       const cells = new Set(g.army.map((s) => `${s.x},${s.y}`));
       expect(cells.size).toBe(g.army.length);
     }
+  });
+
+  it('в раундах 1–2 призрак слабее: на 1 фигуру меньше и без ★2', () => {
+    for (const round of [1, 2]) {
+      for (let seed = 0; seed < 40; seed++) {
+        const g = generateGhost({ round, difficulty: 1, seed });
+        expect(g.army.length).toBe(boardCap(round, RUN_CONFIG) - 1);
+        expect(g.army.every((s) => (s.stars ?? 1) === 1)).toBe(true);
+      }
+    }
+    // Без ослабления в раунде 2 сильный бот иногда собирает ★2.
+    const strong = Array.from({ length: 40 }, (_, seed) =>
+      generateGhost({ round: 2, difficulty: 1, seed, weakRounds: 0 }),
+    );
+    expect(strong.every((g) => g.army.length === boardCap(2, RUN_CONFIG))).toBe(true);
+    expect(strong.some((g) => g.army.some((s) => (s.stars ?? 1) > 1))).toBe(true);
   });
 
   it('стили различаются между seed', () => {

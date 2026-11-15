@@ -32,6 +32,11 @@ export interface GhostOptions {
   readonly config?: RunConfig;
   readonly synergies?: readonly SynergyDef[];
   readonly rules?: Rules;
+  /**
+   * Кривая сложности: в раундах 1..weakRounds призрак слабее — на 1 фигуру меньше
+   * лимита и без ★2 (не покупает третью копию). По умолчанию 2.
+   */
+  readonly weakRounds?: number;
 }
 
 export interface Ghost {
@@ -55,6 +60,8 @@ interface Ctx {
   /** Шум оценок в процентах. */
   readonly noise: number;
   readonly maxRerolls: number;
+  /** Ослабленный призрак (ранние раунды). */
+  readonly weak: boolean;
 }
 
 const owned = (s: RunState): OwnedUnit[] => [
@@ -109,6 +116,8 @@ function shopPhase(ctx: Ctx, start: RunState): RunState {
       .map((id, slot) => (id ? { slot, id, score: buyScore(ctx, s, id) } : null))
       .filter((c): c is { slot: number; id: string; score: number } => c !== null)
       .filter((c) => unitCost(defOf(ctx.cfg, c.id)) <= s.gold)
+      // Ослабленный призрак не собирает ★2: третью копию не покупает.
+      .filter((c) => !ctx.weak || owned(s).filter((u) => u.unit === c.id).length < 2)
       .sort((a, b) => b.score - a.score || a.slot - b.slot);
     const best = candidates[0];
     if (best) {
@@ -143,7 +152,7 @@ function shopPhase(ctx: Ctx, start: RunState): RunState {
 
 /** Расстановка: сильнейшие фигуры (с учётом синергий) на поле, по рядам ролей. */
 function arrange(ctx: Ctx, s: RunState): RunState {
-  const cap = boardCap(s.round, ctx.cfg);
+  const cap = Math.max(1, boardCap(s.round, ctx.cfg) - (ctx.weak ? 1 : 0));
   const mine = owned(s);
   const value = (u: OwnedUnit) => {
     const f = defOf(ctx.cfg, u.unit).family;
@@ -197,6 +206,7 @@ export function generateGhost(opts: GhostOptions): Ghost {
     synergyCounts: [...new Set(synergies.flatMap((s) => s.tiers.map((t) => t.count)))],
     noise: Math.round(15 + 60 * (1 - difficulty)),
     maxRerolls: Math.round(3 * difficulty),
+    weak: opts.round <= (opts.weakRounds ?? 2),
   };
   let s = createRun(opts.seed, cfg);
   for (let r = 1; r <= opts.round; r++) {
